@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "id": "secure-storage",
+  "dart": {
+    "package": "aqutter_plugin_secure_storage",
+    "class": "SecureStoragePlugin"
+  },
+  "native": {
+    "features": {
+      "storage": {
+        "note": "Android：請把安全儲存排除在自動備份之外（Keystore 的金鑰不會被還原，還原後資料無法解開），例如在 android:fullBackupContent／dataExtractionRules 排除 FlutterSecureStorage 的 SharedPreferences"
+      },
+      "auth": {
+        "android": {
+          "permissions": [
+            { "name": "android.permission.USE_BIOMETRIC" }
+          ]
+        },
+        "ios": {
+          "infoPlist": {
+            "NSFaceIDUsageDescription": "Use Face ID to unlock protected data"
+          }
+        },
+        "macos": {
+          "infoPlist": {
+            "NSFaceIDUsageDescription": "Use Touch ID to unlock protected data"
+          }
+        },
+        "note": "Android 的 MainActivity 必須繼承 FlutterFragmentActivity，驗證視窗才能顯示"
+      }
+    }
+  }
+}
