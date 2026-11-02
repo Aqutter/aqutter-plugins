@@ -71,6 +71,18 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/location:
+    devDependencies:
+      '@aqutter/aqutter':
+        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.7
+        version: 3.2.7(happy-dom@17.6.3)
+
   packages/mirror-demo:
     devDependencies:
       '@aqutter/aqutter':

@@ -4,7 +4,7 @@
 - Issue: N/A（無 issue 追蹤基準）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: Planning
+- Status: In Progress
 - Completed: [Wait for Finish]
 
 ## Goals
@@ -30,7 +30,7 @@
 - **執行順序相依**: plugin push 後，範例 App 才能從 GitHub 安裝。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `草擬`
+- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-02）`
 
 ### 1. 方法與事件（`callPlugin('location', <method>, payload)`、`onPluginEvent('location', <event>, …)`）
 | # | 名稱 | 請求 | 回應 |
@@ -94,15 +94,15 @@
 
 ## Open Questions / 待確認事項
 ### Q1. 定位逾時的預設值 — 影響範圍：契約 §2
-- [ ] 15 秒（建議：冷啟動的 GPS 首次定位常需 5 到 30 秒，15 秒是多數情況拿得到、又不會等太久的折衷）
+- [x] 15 秒（建議：冷啟動的 GPS 首次定位常需 5 到 30 秒，15 秒是多數情況拿得到、又不會等太久的折衷）
 - [ ] 30 秒
 - [ ] 10 秒
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：照建議　狀態：✅ 已確認
 
 ### Q2. OpenStreetMap 示範頁的地圖函式庫 — 影響範圍：範例 App
-- [ ] Leaflet（建議：成熟、體積小、直接顯示 OpenStreetMap 的圖磚；以 npm 套件安裝，不依賴 CDN）
+- [x] Leaflet（建議：成熟、體積小、直接顯示 OpenStreetMap 的圖磚；以 npm 套件安裝，不依賴 CDN）
 - [ ] MapLibre GL（向量圖磚，需要另找圖磚來源，OpenStreetMap 官方圖磚是點陣圖）
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：照建議　狀態：✅ 已確認
 
 ## Manual Follow-ups / 人工收尾事項
 - **[上線前]** 用到的 App 補 Android 的 `ACCESS_FINE_LOCATION`、`ACCESS_COARSE_LOCATION`、iOS 與 macOS 的 `NSLocationWhenInUseUsageDescription`、macOS 沙盒的定位 entitlement，並處理商店的隱私申報 — `aqutter doctor` 會檢查前三項 — 屬使用者的原生檔與商店設定，agent 不代做。
@@ -113,7 +113,7 @@
 - **[範圍]** 取得一次＋持續監聽；預設高精度（使用者選擇）；不做背景定位、地理圍欄、地址反查。
 - **[權限]** 沿用殼的權限服務，由網頁先要，不自動跳授權視窗（使用者同意「其他根據建議」）。
 - **[示範]** 範例 App 加一個以 OpenStreetMap 顯示位置的頁面（使用者要求）。
-- **[流程]** 直接 main、不建 issue（待核准時確認）。
+- **[流程]** 直接 main、不建 issue（使用者於核准閘確認）。
 
 ## Git Completion Policy
 - commit 自動；push 與 PR 依核准閘選項。

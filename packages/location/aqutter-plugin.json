@@ -4,5 +4,28 @@
   "dart": {
     "package": "aqutter_plugin_location",
     "class": "LocationPlugin"
+  },
+  "native": {
+    "features": {
+      "locate": {
+        "android": {
+          "permissions": [
+            { "name": "android.permission.ACCESS_FINE_LOCATION" },
+            { "name": "android.permission.ACCESS_COARSE_LOCATION" }
+          ]
+        },
+        "ios": {
+          "infoPlist": {
+            "NSLocationWhenInUseUsageDescription": "Your location is used to show where you are"
+          }
+        },
+        "macos": {
+          "infoPlist": {
+            "NSLocationWhenInUseUsageDescription": "Your location is used to show where you are"
+          }
+        },
+        "note": "macOS 沙盒 App 還需要 entitlement com.apple.security.personal-information.location；Windows 要在「設定 > 隱私權 > 位置」開啟定位服務；使用位置的 App 要自行處理 Google Play 資料安全表與 App Store 隱私標籤"
+      }
+    }
   }
 }
