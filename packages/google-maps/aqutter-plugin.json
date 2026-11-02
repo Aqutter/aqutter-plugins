@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "google-maps",
+  "dart": {
+    "package": "aqutter_plugin_google_maps",
+    "class": "GoogleMapsPlugin"
+  }
+}

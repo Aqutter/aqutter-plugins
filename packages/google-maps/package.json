@@ -1,0 +1,36 @@
+{
+  "name": "aqutter-plugin-google-maps",
+  "version": "0.0.0",
+  "description": "Aqutter plugin：Google 地圖（Android、iOS 用原生地圖鏡像，其他平台用 Google Maps JavaScript API）",
+  "type": "module",
+  "license": "Apache-2.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "files": [
+    "src",
+    "lib",
+    "pubspec.yaml",
+    "aqutter-plugin.json",
+    "README.md"
+  ],
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@aqutter/aqutter": "*"
+  },
+  "peerDependenciesMeta": {
+    "@aqutter/aqutter": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@aqutter/aqutter": "github:Aqutter/aqutter-js#2f5de5d2a4ea9808d402658bb1c53a54cd535911",
+    "@types/google.maps": "^3.66.7",
+    "happy-dom": "^17.6.3",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.7"
+  }
+}

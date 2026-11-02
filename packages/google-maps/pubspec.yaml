@@ -1,0 +1,29 @@
+name: aqutter_plugin_google_maps
+description: Aqutter plugin — google-maps.
+publish_to: 'none'
+version: 0.0.0
+
+environment:
+  sdk: '>=3.13.7 <4.0.0'
+  flutter: '>=3.47.8'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # App 與 plugin 必須使用同一個殼版本（git ref 相同），否則 pub 會解不出相依。
+  aqutter:
+    git:
+      url: https://github.com/Aqutter/aqutter.git
+      path: shell
+      ref: 0.0.0
+
+  # Google 地圖。原生部分（Android／iOS）由 Flutter 工具鏈在 App 建置時自動整合；
+  # API key 要由使用端 App 設定，見 README。
+  google_maps_flutter: ^2.12.0
+  google_maps_flutter_android: ^2.14.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
