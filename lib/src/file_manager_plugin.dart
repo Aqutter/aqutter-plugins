@@ -4,8 +4,10 @@ import 'dart:typed_data';
 
 import 'package:aqutter/aqutter.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'grants.dart';
 import 'local_file_ops.dart';
 import 'location.dart';
 import 'media_saver.dart';
@@ -26,84 +28,125 @@ Future<Directory> _defaultRoot(String root) {
   }
 }
 
-/// `file-manager` plugin 的 Dart 端：App 資料夾內的檔案管理（契約 `sandbox` 功能）。
+/// 一個位置解析後的結果：在哪個根上、用哪組路徑段操作。
+class _Target {
+  const _Target(this.ops, this.segments, {this.isFileGrant = false});
+
+  final LocalFileOps ops;
+  final List<String> segments;
+
+  /// 單一檔案的授權：只能對那個檔案本身操作。
+  final bool isFileGrant;
+}
+
+/// `file-manager` plugin 的 Dart 端：App 資料夾、使用者授權的位置、相簿與下載。
 ///
-/// 網頁以位置字串（`app-documents:報表/a.pdf`）指定檔案，路徑驗證與根解析都在這裡，
+/// 網頁以位置字串（`app-documents:報表/a.pdf`、`granted:<編號>/子/路徑`）指定檔案，路徑驗證與根解析都在這裡，
 /// 網頁不會拿到各平台不同的實際路徑。
 class FileManagerPlugin extends AqutterPlugin {
-  FileManagerPlugin({SandboxRootResolver? rootResolver, GalleryWriter? gallery, FileSaveDialog? saveDialog, TargetPlatform? platform})
-      : _rootResolver = rootResolver ?? _defaultRoot,
+  FileManagerPlugin({
+    SandboxRootResolver? rootResolver,
+    GalleryWriter? gallery,
+    FileSaveDialog? saveDialog,
+    GrantManager? grants,
+    TargetPlatform? platform,
+  })  : _rootResolver = rootResolver ?? _defaultRoot,
         _gallery = gallery ?? GalGalleryWriter(),
         _saveDialog = saveDialog ?? FilePickerSaveDialog(),
+        _grants = grants ?? GrantManager(),
         _platform = platform;
 
   final SandboxRootResolver _rootResolver;
   final GalleryWriter _gallery;
   final FileSaveDialog _saveDialog;
+  final GrantManager _grants;
   final TargetPlatform? _platform;
 
   @override
   String get id => 'file-manager';
 
-  /// 相簿只有行動平台；其他方法在支援的平台上都可用（桌面的授權與下載之後補上）。
+  /// 相簿只有行動平台；授權目前只有桌面（行動平台的授權之後補上）；其他方法各平台都可用。
   @override
   Set<TargetPlatform>? supportedPlatformsFor(String method) {
-    return method == 'saveToGallery' ? const {TargetPlatform.android, TargetPlatform.iOS} : null;
+    switch (method) {
+      case 'saveToGallery':
+        return const {TargetPlatform.android, TargetPlatform.iOS};
+      case 'grant':
+      case 'grants':
+      case 'revoke':
+        return const {TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux};
+      default:
+        return null;
+    }
   }
 
   @override
   Map<String, AqutterPluginHandler> get handlers => {
-        'saveToGallery': _guard((payload) => saveToGallery(payload, _gallery)),
-        'saveToDownloads': _guard((payload) async {
-          // 從位置讀檔是同步的檔案操作：先解析出該位置的 ops，再交給驗證函式
-          final from = payload['from'];
-          final ops = from == null ? null : await _opsFor(parseLocation(from));
-          return saveToDownloads(
-            payload,
-            _saveDialog,
-            (location) => ops!.readAll(location.segments, maxDownloadBytes),
-            _platform ?? defaultTargetPlatform,
-          );
-        }),
         'list': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
-          return {'entries': ops.list(location.segments)};
+          final target = await _target(payload['location']);
+          return {'entries': target.ops.list(target.segments)};
         }),
         'stat': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
-          return ops.stat(location.segments);
+          final target = await _target(payload['location']);
+          return target.ops.stat(target.segments);
         }),
         'read': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
-          return ops.read(location.segments, offset: _optInt(payload, 'offset') ?? 0, length: _optInt(payload, 'length'));
+          final target = await _target(payload['location']);
+          return target.ops.read(target.segments, offset: _optInt(payload, 'offset') ?? 0, length: _optInt(payload, 'length'));
         }),
         'write': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
+          final target = await _target(payload['location']);
           final data = payload['data'];
           if (data is! Uint8List) {
             throw const FileManagerException(errInvalidPath, 'data 必須是二進位');
           }
-          return {'size': ops.write(location.segments, data, payload['mode'] as String? ?? '')};
+          return {'size': target.ops.write(target.segments, data, payload['mode'] as String? ?? '')};
         }),
         'makeDirectory': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
-          ops.makeDirectory(location.segments, recursive: payload['recursive'] == true);
+          final target = await _target(payload['location']);
+          if (target.isFileGrant) {
+            throw const FileManagerException(errNotADirectory, '這個授權是單一檔案，不能建資料夾');
+          }
+          target.ops.makeDirectory(target.segments, recursive: payload['recursive'] == true);
           return <String, dynamic>{};
         }),
         'copy': _guard((payload) async {
-          final (ops, from, to) = await _opsPair(payload);
-          ops.copy(from.segments, to.segments, overwrite: payload['overwrite'] == true);
+          final (from, to) = await _targetPair(payload);
+          from.ops.copy(from.segments, to.segments, overwrite: payload['overwrite'] == true);
           return <String, dynamic>{};
         }),
         'move': _guard((payload) async {
-          final (ops, from, to) = await _opsPair(payload);
-          ops.move(from.segments, to.segments, overwrite: payload['overwrite'] == true);
+          final (from, to) = await _targetPair(payload);
+          from.ops.move(from.segments, to.segments, overwrite: payload['overwrite'] == true);
           return <String, dynamic>{};
         }),
         'delete': _guard((payload) async {
-          final (ops, location) = await _ops(payload['location']);
-          ops.delete(location.segments, recursive: payload['recursive'] == true);
+          final target = await _target(payload['location']);
+          target.ops.delete(target.segments, recursive: payload['recursive'] == true);
           return <String, dynamic>{};
+        }),
+        'grant': _guard((payload) async {
+          final granted = await _grants.grant(payload['kind']);
+          return {'grants': granted.map((g) => g.toPublic()).toList()};
+        }),
+        'grants': _guard((payload) async {
+          return {'grants': (await _grants.list()).map((g) => g.toPublic()).toList()};
+        }),
+        'revoke': _guard((payload) async {
+          await _grants.revoke(payload['id']);
+          return <String, dynamic>{};
+        }),
+        'saveToGallery': _guard((payload) => saveToGallery(payload, _gallery)),
+        'saveToDownloads': _guard((payload) async {
+          // 從位置讀檔是同步的檔案操作：先解析出該位置的操作對象，再交給驗證函式
+          final from = payload['from'];
+          final target = from == null ? null : await _target(from);
+          return saveToDownloads(
+            payload,
+            _saveDialog,
+            (location) => target!.ops.readAll(target.segments, maxDownloadBytes),
+            _platform ?? defaultTargetPlatform,
+          );
         }),
       };
 
@@ -119,25 +162,35 @@ class FileManagerPlugin extends AqutterPlugin {
     };
   }
 
-  Future<(LocalFileOps, Location)> _ops(Object? value) async {
-    final location = parseLocation(value);
-    return (await _opsFor(location), location);
-  }
+  Future<_Target> _target(Object? value) async => _resolve(parseLocation(value));
 
-  Future<(LocalFileOps, Location, Location)> _opsPair(Map<String, dynamic> payload) async {
+  Future<(_Target, _Target)> _targetPair(Map<String, dynamic> payload) async {
     final from = parseLocation(payload['from']);
     final to = parseLocation(payload['to']);
     if (!from.sameRootAs(to)) {
       throw const FileManagerException(errCrossRoot, '來源與目標不在同一個根；請改用讀取加寫入');
     }
-    return (await _opsFor(from), from, to);
+    final source = await _resolve(from);
+    if (source.isFileGrant) {
+      throw const FileManagerException(errInvalidPath, '單一檔案的授權不能複製或搬移；請改用讀取加寫入');
+    }
+    return (source, await _resolve(to));
   }
 
-  Future<LocalFileOps> _opsFor(Location location) async {
-    if (location.grantId != null) {
-      throw FileManagerException(errNotFound, '沒有授權「${location.grantId}」');
+  Future<_Target> _resolve(Location location) async {
+    final grantId = location.grantId;
+    if (grantId == null) {
+      return _Target(LocalFileOps(await _rootResolver(location.root)), location.segments);
     }
-    return LocalFileOps(await _rootResolver(location.root));
+    final grant = await _grants.resolve(grantId);
+    if (grant.isDirectory) {
+      return _Target(LocalFileOps(Directory(grant.path)), location.segments);
+    }
+    if (location.segments.isNotEmpty) {
+      throw const FileManagerException(errNotADirectory, '這個授權是單一檔案，沒有子路徑');
+    }
+    // 單一檔案：以它所在的資料夾為根、只允許操作那個檔名
+    return _Target(LocalFileOps(Directory(p.dirname(grant.path))), [p.basename(grant.path)], isFileGrant: true);
   }
 
   int? _optInt(Map<String, dynamic> payload, String key) {

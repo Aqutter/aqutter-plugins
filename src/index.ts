@@ -13,7 +13,14 @@ export interface FileEntry {
   modified: number
 }
 
-export type WriteMode = 'create' | 'overwrite' | 'append'
+/** 使用者授權的位置；用 `granted:<id>/相對路徑` 操作。網頁看不到實際路徑。 */
+export interface FileGrant {
+  id: string
+  name: string
+  kind: 'file' | 'directory'
+}
+
+export type WriteMode ='create' | 'overwrite' | 'append'
 
 /** 單次讀寫的內容上限（位元組）；更大的檔案用 `offset`／`length` 與 `append` 分段。 */
 export const MAX_CONTENT_BYTES = 5 * 1024 * 1024
@@ -29,6 +36,9 @@ export type FileManagerContract = PluginDefinition<
     copy: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     move: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     delete: { req: { location: FileLocation, recursive?: boolean }, res: Record<string, never> }
+    grant: { req: { kind: 'file' | 'files' | 'directory' }, res: { grants: FileGrant[] } }
+    grants: { req: Record<string, never>, res: { grants: FileGrant[] } }
+    revoke: { req: { id: string }, res: Record<string, never> }
     saveToGallery: { req: { data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg' }, res: { status: 'saved' } }
     saveToDownloads: {
       req: { name: string, mimeType: string } & ({ data: Uint8Array, from?: never } | { from: FileLocation, data?: never })
@@ -70,6 +80,18 @@ export const fileManager = {
   },
   delete: async (location: FileLocation, options: { recursive?: boolean } = {}): Promise<void> => {
     await callPlugin('file-manager', 'delete', { location, ...options })
+  },
+  /**
+   * 開啟系統的選擇器，讓使用者授權檔案或資料夾；`files` 為一次選多個檔案（每個檔案各一個授權）。
+   * 取消回空陣列。授權會持久保存；資料夾授權用 `granted:<id>/子/路徑`，單一檔案授權用 `granted:<id>`（沒有子路徑）。
+   * 目前只有桌面平台（Windows、macOS、Linux）。
+   */
+  grant: async (kind: 'file' | 'files' | 'directory'): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grant', { kind })).grants,
+  /** 目前所有授權；實際位置已不存在的授權仍會列出，操作時回 `permission_denied`。 */
+  grants: async (): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grants', {})).grants,
+  /** 撤銷授權；只刪除授權紀錄，不會動到實際的檔案。 */
+  revoke: async (id: string): Promise<void> => {
+    await callPlugin('file-manager', 'revoke', { id })
   },
   /** 存圖到相簿（Android、iOS）。只收 PNG 與 JPEG，位元組開頭必須與 `mimeType` 相符，單次上限 {@link MAX_CONTENT_BYTES}。 */
   saveToGallery: async (data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg'): Promise<void> => {
