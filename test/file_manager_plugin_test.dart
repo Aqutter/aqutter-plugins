@@ -4,9 +4,29 @@ import 'dart:typed_data';
 import 'package:aqutter/aqutter.dart';
 import 'package:aqutter_plugin_file_manager/aqutter_plugin_file_manager.dart';
 import 'package:aqutter_plugin_file_manager/src/location.dart';
+import 'package:aqutter_plugin_file_manager/src/media_saver.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_test/flutter_test.dart';
 
 Uint8List _bytes(String text) => Uint8List.fromList(text.codeUnits);
+
+class _FakeGallery implements GalleryWriter {
+  _FakeGallery({this.denied = false});
+
+  final bool denied;
+  final List<(Uint8List, String)> saved = [];
+
+  @override
+  Future<void> putImage(Uint8List bytes, String name) async {
+    if (denied) {
+      throw const FileManagerException(errPermissionDenied, 'no access');
+    }
+    saved.add((bytes, name));
+  }
+}
+
+final Uint8List _png = Uint8List.fromList([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
+final Uint8List _jpeg = Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
 
 void main() {
   group('parseLocation', () {
@@ -232,6 +252,57 @@ void main() {
       expectError(await call('read', {'location': 'app-cache:escape/secret'}), errInvalidPath);
       expectError(await call('list', {'location': 'app-cache:escape'}), errInvalidPath);
       expect(File('${outside.path}/secret').existsSync(), isTrue);
+    });
+  });
+
+  group('saveToGallery', () {
+    Future<dynamic> save(FileManagerPlugin plugin, Map<String, dynamic> payload) => plugin.handlers['saveToGallery']!(payload);
+
+    void expectError(dynamic result, String code) {
+      final error = aqutterErrorOf(result);
+      expect(error, isNotNull, reason: 'expected $code, got $result');
+      expect(error!.code, code);
+    }
+
+    test('saves a PNG and a JPEG, handing the gallery the name without its extension', () async {
+      final gallery = _FakeGallery();
+      final plugin = FileManagerPlugin(gallery: gallery);
+
+      expect(await save(plugin, {'data': _png, 'name': 'logo.png', 'mimeType': 'image/png'}), {'status': 'saved'});
+      expect(await save(plugin, {'data': _jpeg, 'name': 'photo', 'mimeType': 'image/jpeg'}), {'status': 'saved'});
+
+      expect(gallery.saved.map((item) => item.$2), ['logo', 'photo']);
+    });
+
+    test('is only available on Android and iOS, the other methods on every platform', () {
+      final plugin = FileManagerPlugin();
+
+      expect(plugin.supportedPlatformsFor('saveToGallery'), {TargetPlatform.android, TargetPlatform.iOS});
+      expect(plugin.supportedPlatformsFor('list'), isNull);
+    });
+
+    test('rejects a bad name, a missing or oversized payload and an unsupported type', () async {
+      final plugin = FileManagerPlugin(gallery: _FakeGallery());
+
+      for (final name in ['', '.', '..', 'a/b.png', 'a\b.png', 'a .png', 'x' * 256]) {
+        expectError(await save(plugin, {'data': _png, 'name': name, 'mimeType': 'image/png'}), errInvalidPath);
+      }
+      expectError(await save(plugin, {'name': 'a.png', 'mimeType': 'image/png'}), errInvalidPath);
+      expectError(await save(plugin, {'data': Uint8List(maxContentBytes + 1), 'name': 'a.png', 'mimeType': 'image/png'}), errTooLarge);
+      expectError(await save(plugin, {'data': _png, 'name': 'a.gif', 'mimeType': 'image/gif'}), errInvalidPath);
+    });
+
+    test('the bytes must really be the declared image type', () async {
+      final plugin = FileManagerPlugin(gallery: _FakeGallery());
+
+      expectError(await save(plugin, {'data': _jpeg, 'name': 'a.png', 'mimeType': 'image/png'}), errInvalidPath);
+      expectError(await save(plugin, {'data': _bytes('not an image'), 'name': 'a.png', 'mimeType': 'image/png'}), errInvalidPath);
+    });
+
+    test('a refused gallery permission comes back as permission_denied', () async {
+      final plugin = FileManagerPlugin(gallery: _FakeGallery(denied: true));
+
+      expectError(await save(plugin, {'data': _png, 'name': 'a.png', 'mimeType': 'image/png'}), errPermissionDenied);
     });
   });
 }

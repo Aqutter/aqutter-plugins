@@ -4,5 +4,24 @@
   "dart": {
     "package": "aqutter_plugin_file_manager",
     "class": "FileManagerPlugin"
+  },
+  "native": {
+    "features": {
+      "sandbox": {},
+      "granted": {},
+      "gallery": {
+        "android": {
+          "permissions": [
+            { "name": "android.permission.WRITE_EXTERNAL_STORAGE", "maxSdkVersion": 28 }
+          ]
+        },
+        "ios": {
+          "infoPlist": {
+            "NSPhotoLibraryAddUsageDescription": "Save images to your photo library"
+          }
+        }
+      },
+      "downloads": {}
+    }
   }
 }

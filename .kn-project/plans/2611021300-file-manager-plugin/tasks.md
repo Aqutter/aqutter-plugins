@@ -7,9 +7,9 @@
 - [x] 網頁端 API 與型別
 
 ## Phase 2 — gallery 與 downloads
-- [ ] 相簿（Android MediaStore、iOS 相簿）
+- [x] 相簿（以 gal 實作；Dart 端與測試完成，未實機驗證）
 - [ ] 下載（Android MediaStore、iOS 匯出視窗、桌面下載資料夾）
-- [ ] 描述檔 `native.features` 宣告
+- [x] 描述檔 `native.features` 宣告（已用 CLI 的解析驗證）
 
 ## Phase 3 — granted
 - [ ] 授權清單持久化

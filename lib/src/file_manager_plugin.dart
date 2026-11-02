@@ -3,10 +3,12 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:aqutter/aqutter.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:path_provider/path_provider.dart';
 
 import 'local_file_ops.dart';
 import 'location.dart';
+import 'media_saver.dart';
 
 /// 取得 App 的資料夾；測試可注入。
 typedef SandboxRootResolver = Future<Directory> Function(String root);
@@ -29,15 +31,25 @@ Future<Directory> _defaultRoot(String root) {
 /// 網頁以位置字串（`app-documents:報表/a.pdf`）指定檔案，路徑驗證與根解析都在這裡，
 /// 網頁不會拿到各平台不同的實際路徑。
 class FileManagerPlugin extends AqutterPlugin {
-  FileManagerPlugin({SandboxRootResolver? rootResolver}) : _rootResolver = rootResolver ?? _defaultRoot;
+  FileManagerPlugin({SandboxRootResolver? rootResolver, GalleryWriter? gallery})
+      : _rootResolver = rootResolver ?? _defaultRoot,
+        _gallery = gallery ?? GalGalleryWriter();
 
   final SandboxRootResolver _rootResolver;
+  final GalleryWriter _gallery;
 
   @override
   String get id => 'file-manager';
 
+  /// 相簿只有行動平台；其他方法在支援的平台上都可用（桌面的授權與下載之後補上）。
+  @override
+  Set<TargetPlatform>? supportedPlatformsFor(String method) {
+    return method == 'saveToGallery' ? const {TargetPlatform.android, TargetPlatform.iOS} : null;
+  }
+
   @override
   Map<String, AqutterPluginHandler> get handlers => {
+        'saveToGallery': _guard((payload) => saveToGallery(payload, _gallery)),
         'list': _guard((payload) async {
           final (ops, location) = await _ops(payload['location']);
           return {'entries': ops.list(location.segments)};

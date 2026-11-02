@@ -29,6 +29,7 @@ export type FileManagerContract = PluginDefinition<
     copy: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     move: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     delete: { req: { location: FileLocation, recursive?: boolean }, res: Record<string, never> }
+    saveToGallery: { req: { data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg' }, res: { status: 'saved' } }
   },
   Record<string, never>
 >
@@ -65,5 +66,9 @@ export const fileManager = {
   },
   delete: async (location: FileLocation, options: { recursive?: boolean } = {}): Promise<void> => {
     await callPlugin('file-manager', 'delete', { location, ...options })
+  },
+  /** 存圖到相簿（Android、iOS）。只收 PNG 與 JPEG，位元組開頭必須與 `mimeType` 相符，單次上限 {@link MAX_CONTENT_BYTES}。 */
+  saveToGallery: async (data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg'): Promise<void> => {
+    await callPlugin('file-manager', 'saveToGallery', { data, name, mimeType })
   },
 }
