@@ -4,7 +4,7 @@
 - Issue: N/A（無 issue 追蹤基準）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: Planning
+- Status: In Progress
 - Completed: [Wait for Finish]
 
 ## Goals
@@ -34,14 +34,14 @@
 - **不在本計畫**: 「不支援的平台不再報錯」的框架行為變更（另一份計畫，建議等本計畫完成後做，因為它會一次改到所有官方 plugin 的網頁 API）。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `草擬`
+- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-02）`
 
-### 1. 安裝字串（消費方：`aqutter plugin add`、範例 App 的 `package.json`、文件）
+### 1. 安裝字串（`<dir>` 是 `packages/` 底下的資料夾名，等於舊 repo 名去掉 `aqutter-plugin-`，例如 `haptics`、`sqlite-drift`；消費方：`aqutter plugin add`、範例 App 的 `package.json`、文件）
 | 來源 | 字串 |
 |---|---|
-| npm（發佈後） | `aqutter-plugin-<id>` |
-| GitHub 單一 plugin | `github:Aqutter/aqutter-plugins#path:/packages/<id>` |
-| 本機開發 | `file:../aqutter-plugins/packages/<id>` |
+| npm（發佈後） | `aqutter-plugin-<dir>` |
+| GitHub 單一 plugin | `github:Aqutter/aqutter-plugins#path:/packages/<dir>` |
+| 本機開發 | `file:../aqutter-plugins/packages/<dir>` |
 
 ### 2. 不變的識別
 | 項目 | 規則 |
@@ -67,20 +67,20 @@
 
 ## Open Questions / 待確認事項
 ### Q1. repo 名稱 — 影響範圍：新 repo、安裝字串
-- [ ] `aqutter-plugins`（建議：直觀，符合現有 `aqutter-*` 命名）
+- [x] `aqutter-plugins`（建議：直觀，符合現有 `aqutter-*` 命名）
 - [ ] `aqutter-official-plugins`
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：已確認（照建議）　狀態：✅ 已確認
 
 ### Q2. 舊 repo 的處理 — 影響範圍：七個舊 repo
-- [ ] 新 repo 驗證完成後，在舊 repo 放一個指向新 repo 的 README 並設為封存（archive），不刪除（建議：可逆，既有連結仍可 clone）
+- [x] 新 repo 驗證完成後，在舊 repo 放一個指向新 repo 的 README 並設為封存（archive），不刪除（建議：可逆，既有連結仍可 clone）
 - [ ] 只放 README，不封存
 - [ ] 保持原狀、不處理
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：已確認（照建議）　狀態：✅ 已確認
 
 ### Q3. 是否現在就把 `sqlite-drift` 與其他 plugin 一併遷入 — 影響範圍：`packages/`
-- [ ] 全部七個一次遷入（建議：一次到位，之後只維護一個地方）
+- [x] 全部七個一次遷入（建議：一次到位，之後只維護一個地方）
 - [ ] 先遷入已維護中的（file-manager、secure-storage），其餘之後再說
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：已確認（照建議）　狀態：✅ 已確認
 
 ## Manual Follow-ups / 人工收尾事項
 - **[合併後]** 發佈到 npm（若要讓使用者用 `aqutter plugin add aqutter-plugin-<id>` 的短字串）— 需要 npm 帳號與 token，每個套件 `pnpm publish` — agent 不持有 npm 憑證，也不該代發佈。在發佈前，用 GitHub 子資料夾字串安裝即可。
@@ -88,11 +88,12 @@
 - **[上線前]** 範例 App 以外的既有 App（若有）把依賴改成新字串 — 屬各 App 擁有者。
 
 ## Key Decisions
+- **[Q1]** repo 名稱 `aqutter-plugins`；**[Q2]** 舊 repo 放指向新 repo 的 README 再封存（封存前再問一次）；**[Q3]** 七個一次全部遷入。
 - **[合併]** 官方 plugin 合併成單一 repo、安裝仍可用單一 plugin（使用者決定）。
 - **[時機]** 先遷移再繼續開發 `secure-storage`、`biometrics`、`location`（使用者選擇）。
 - **[歷史]** 用 `git subtree add` 保留各 repo 歷史，不重寫。
 - **[安裝]** 用 pnpm 的 `#path:` 子資料夾安裝，不需要先發佈到 npm；實測 pnpm 只安裝指定的子資料夾。
-- **[流程]** 直接 main、不建 issue（待核准時確認）。
+- **[流程]** 直接 main、不建 issue（使用者於核准閘確認）。
 
 ## Git Completion Policy
 - commit 自動；建立遠端 repo、push、封存舊 repo 依核准閘與 Open Questions 的決議，逐項確認。
