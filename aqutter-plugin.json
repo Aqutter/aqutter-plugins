@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "secure-storage",
+  "dart": {
+    "package": "aqutter_plugin_secure_storage",
+    "class": "SecureStoragePlugin"
+  }
+}
