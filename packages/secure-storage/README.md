@@ -2,7 +2,7 @@
 
 Aqutter plugin：`secure-storage`。把小量機密（登入 token、金鑰）存進系統的安全儲存，並可要求使用者**通過生物辨識或裝置密碼才能讀出**。同一個 repo 同時是 npm 套件（網頁端 API）與 Dart 套件（Flutter 端）。
 
-> **進度**：Dart 端與網頁端已完成，24 個單元測試通過（以記憶體內的假儲存測試契約與錯誤對應）。**已在 Android 實機驗證一般項目**（set、get、keys、clear、重新啟動後仍在、不合法的鍵回 `invalid_key`、裝置沒有螢幕鎖定時 `requireAuth` 回 `auth_unavailable`）。**需要驗證的項目（`requireAuth`）的成功路徑尚未驗證**：測試用的手機沒有設定螢幕鎖定；iOS、macOS、Windows 也都尚未實機驗證。
+> **進度**：Dart 端與網頁端已完成，24 個單元測試通過（以記憶體內的假儲存測試契約與錯誤對應）。**已在 Android 實機與 Windows 驗證一般項目**（set、get、keys、clear、重新啟動後仍在、不合法的鍵回 `invalid_key`、裝置沒有螢幕鎖定時 `requireAuth` 回 `auth_unavailable`）。**需要驗證的項目（`requireAuth`）的成功路徑尚未驗證**：測試用的手機沒有設定螢幕鎖定；iOS 與 macOS 也都尚未實機驗證。
 
 ## 為什麼不是 `localStorage` 或 `shared_preferences`
 
