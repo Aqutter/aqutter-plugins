@@ -1,0 +1,22 @@
+name: flutter_secure_storage_windows
+description: >-
+  An empty stand-in for flutter_secure_storage_windows. The real package needs ATL (atlstr.h) to build on Windows.
+  aqutter-plugin-secure-storage does not support Windows, so apps replace the real package with this one
+  through dependency_overrides and the Windows build needs no extra component.
+version: 4.2.2
+publish_to: none
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: '>=3.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    implements: flutter_secure_storage
+    platforms:
+      windows:
+        dartPluginClass: FlutterSecureStorageWindows

@@ -20,7 +20,19 @@ Aqutter plugin：`secure-storage`。把小量機密（登入 token、金鑰）�
 | `storage` | `set`、`get`、`has`、`delete`、`keys`、`clear` | 不需要，但 Android 要排除自動備份 |
 | `auth` | `set` 帶 `requireAuth`，之後 `get` 要先驗證 | Android `USE_BIOMETRIC`、iOS／macOS `NSFaceIDUsageDescription`、`MainActivity` 繼承 `FlutterFragmentActivity` |
 
-平台：Android、iOS、macOS、Windows。**`requireAuth` 只有 Android、iOS、macOS**；Windows 回 `auth_unavailable`（不會默默存成不需驗證）。**不支援 Linux**（需要 libsecret，行為差距大）。
+平台：Android、iOS、macOS。**Windows 與 Linux 不支援**：Linux 需要 libsecret、行為差距大；Windows 的底層實作需要 ATL。在這兩個平台上網頁端的呼叫回 `undefined`（網頁 API 回安全預設值：`get` 回 `null`、`keys` 回 `[]`、`set` 不做事——**不會真的存下機密**，要確認用 `isPluginSupported('secure-storage', 'set')`）。
+
+### Windows 建置要加一段覆寫
+
+`flutter_secure_storage` 的 Windows 實作需要 ATL（`atlstr.h`），沒有 ATL 的環境會建置失敗。為了不讓 Windows 建置多一個相依，請把它換成這個套件附的空替身，在 App 的 `pubspec.yaml` 加（只有 App 自己的 `dependency_overrides` 會生效）：
+
+```yaml
+dependency_overrides:
+  flutter_secure_storage_windows:
+    path: ../node_modules/aqutter-plugin-secure-storage/windows_stub
+```
+
+沒有這段覆寫的 App 在 Windows 上建置會失敗；其他平台不受影響。
 
 ## 安裝
 
