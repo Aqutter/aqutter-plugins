@@ -1,0 +1,12 @@
+{
+  "name": "aqutter-plugins",
+  "private": true,
+  "description": "Aqutter 官方 plugin 的 monorepo；每個 plugin 在 packages/<dir>，各自以 aqutter-plugin-<dir> 的名稱被安裝。",
+  "license": "Apache-2.0",
+  "scripts": {
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "test:dart": "node scripts/test-dart.mjs",
+    "verify": "pnpm typecheck && pnpm test && pnpm test:dart"
+  }
+}

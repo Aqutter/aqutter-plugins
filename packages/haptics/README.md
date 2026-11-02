@@ -5,7 +5,7 @@ Aqutter plugin：網頁呼叫裝置觸覺回饋。**純 Dart**——只用 Flutt
 ## 安裝
 
 ```bash
-aqutter plugin add github:Aqutter/aqutter-plugin-haptics
+aqutter plugin add github:Aqutter/aqutter-plugins#path:/packages/haptics
 cd aqutter && flutter pub get
 ```
 

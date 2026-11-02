@@ -5,7 +5,7 @@ Aqutter plugin：電池資訊。包裝 [`battery_plus`](https://pub.dev/packages
 ## 安裝
 
 ```bash
-aqutter plugin add github:Aqutter/aqutter-plugin-battery
+aqutter plugin add github:Aqutter/aqutter-plugins#path:/packages/battery
 cd aqutter && flutter pub get
 ```
 

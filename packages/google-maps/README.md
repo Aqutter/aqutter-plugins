@@ -14,7 +14,7 @@ Aqutter plugin：把 `google_maps_flutter` 的地圖在 Flutter 裡渲染（墊�
 在 Aqutter 專案：
 
 ```bash
-pnpm exec aqutter plugin add github:Aqutter/aqutter-plugin-google-maps
+pnpm exec aqutter plugin add github:Aqutter/aqutter-plugins#path:/packages/google-maps
 ```
 
 ## 網頁端

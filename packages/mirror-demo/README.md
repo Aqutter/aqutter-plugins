@@ -5,7 +5,7 @@ Aqutter plugin 範例：**native view 鏡像**。一個純 Flutter 的互動畫�
 ## 安裝
 
 ```bash
-aqutter plugin add github:Aqutter/aqutter-plugin-mirror-demo
+aqutter plugin add github:Aqutter/aqutter-plugins#path:/packages/mirror-demo
 cd aqutter && flutter pub get
 ```
 
