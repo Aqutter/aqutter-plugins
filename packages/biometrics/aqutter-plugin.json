@@ -4,5 +4,27 @@
   "dart": {
     "package": "aqutter_plugin_biometrics",
     "class": "BiometricsPlugin"
+  },
+  "native": {
+    "features": {
+      "authenticate": {
+        "android": {
+          "permissions": [
+            { "name": "android.permission.USE_BIOMETRIC" }
+          ]
+        },
+        "ios": {
+          "infoPlist": {
+            "NSFaceIDUsageDescription": "Use Face ID to confirm it is you"
+          }
+        },
+        "macos": {
+          "infoPlist": {
+            "NSFaceIDUsageDescription": "Use Touch ID to confirm it is you"
+          }
+        },
+        "note": "Android 的 MainActivity 必須繼承 FlutterFragmentActivity，驗證視窗才能顯示"
+      }
+    }
   }
 }

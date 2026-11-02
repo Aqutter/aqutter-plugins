@@ -21,6 +21,9 @@ dependencies:
       url: https://github.com/Aqutter/aqutter.git
       path: shell
       ref: 0.0.0
+  local_auth: ^3.0.2
+  local_auth_android: ^2.3.0
+  local_auth_darwin: ^2.0.5
 
   # When native capabilities are needed, add an existing Flutter plugin here (e.g. battery_plus);
   # its native part is integrated automatically by the Flutter toolchain at app build time, no extra setup needed.

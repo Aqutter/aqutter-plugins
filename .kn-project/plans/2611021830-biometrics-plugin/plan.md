@@ -4,7 +4,7 @@
 - Issue: N/A（無 issue 追蹤基準）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: Planning
+- Status: In Progress
 - Completed: [Wait for Finish]
 
 ## Goals
@@ -29,13 +29,13 @@
 - **執行順序相依**: 無；範例 App 接入與 Android 實機驗證在同一個計畫內完成。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `草擬`
+- **契約正本 repo**: `aqutter-plugins`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-02）`
 
 ### 1. 方法（`callPlugin('biometrics', <method>, payload)`）
 | # | 方法 | 請求 | 回應 |
 |---|---|---|---|
 | 1 | `capabilities` | `{}` | `{ available: boolean, biometrics: boolean, types: BiometricType[] }` |
-| 2 | `authenticate` | `{ reason, biometricOnly? }` | `{ status: AuthStatus }` |
+| 2 | `authenticate` | `{ reason, title?, cancelLabel?, biometricOnly? }` | `{ status: AuthStatus }` |
 
 `BiometricType`：`fingerprint`、`face`、`iris`、`strong`、`weak`（依平台能回報的為準，可能為空）。
 
@@ -45,6 +45,8 @@
 | `available` | 裝置有可用的驗證方式（生物辨識或裝置密碼／螢幕鎖定） |
 | `biometrics` | 裝置已登錄生物辨識（不含只有裝置密碼的情況） |
 | `reason` | 驗證視窗顯示的說明文字，必填，1 到 100 字 |
+| `title` | 選填，≤ 60 字：視窗標題；只有 Android 使用，其他平台忽略 |
+| `cancelLabel` | 選填，≤ 30 字：取消按鈕文字；Android 與 iOS 使用，其他平台忽略 |
 | `biometricOnly` | 布林，預設 `false`；`true` 時只接受生物辨識，沒有登錄生物辨識回 `unavailable` |
 
 ### 3. `AuthStatus`
@@ -61,7 +63,7 @@
 ### 4. 錯誤碼
 | 錯誤碼 | 觸發條件 |
 |---|---|
-| `invalid_argument` | `reason` 缺漏、不是字串或長度不合法；`biometricOnly` 不是布林 |
+| `invalid_argument` | `reason` 缺漏、不是字串或長度不合法；`title`、`cancelLabel` 不是字串或超過長度；`biometricOnly` 不是布林 |
 
 ### 5. 狀態與規則
 - 驗證結果**不留存**：每次呼叫都重新驗證，plugin 不快取「剛剛驗證過」。
@@ -93,24 +95,26 @@
 
 ## Open Questions / 待確認事項
 ### Q1. Windows 是否納入第一版 — 影響範圍：`supportedPlatforms`
-- [ ] 納入（建議：`local_auth` 支援 Windows Hello，這台開發機可以實測）
+- [x] 納入（建議：`local_auth` 支援 Windows Hello，這台開發機可以實測）
 - [ ] 不納入，只做 Android、iOS、macOS
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：照建議　狀態：✅ 已確認
 
 ### Q2. 預設是否允許裝置密碼備援 — 影響範圍：`biometricOnly` 預設值
-- [ ] 預設允許（`biometricOnly: false`）（建議：沒登錄生物辨識的使用者仍可用裝置密碼，較不會把人擋在外面）
+- [x] 預設允許（`biometricOnly: false`）（建議：沒登錄生物辨識的使用者仍可用裝置密碼，較不會把人擋在外面）
 - [ ] 預設只接受生物辨識
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：照建議　狀態：✅ 已確認
 
 ## Manual Follow-ups / 人工收尾事項
 - **[上線前]** 用到的 App 補 `USE_BIOMETRIC`、`NSFaceIDUsageDescription`、`FlutterFragmentActivity` — `aqutter doctor` 會檢查前兩項 — 屬使用者的原生檔，agent 不代改。
 - **[合併後]** 驗證成功路徑需要有螢幕鎖定或生物辨識的裝置，iOS 與 macOS 需要 Apple 裝置 — 這台機器的手機沒有螢幕鎖定，且無法編譯 Swift — 由使用者另行測試。
 
 ## Key Decisions
+- **[通用性]** plugin 完全不知道它在保護什麼，任何時候都能叫起（沒有前置條件、不快取）；新增選填的 `title`、`cancelLabel` 讓網頁控制視窗文字（使用者要求）。
+- **[Q1]** Windows 納入；**[Q2]** 預設允許裝置密碼備援。
 - **[範圍]** 只做「驗證一次」，不管理金鑰（使用者選擇）；與 `secure-storage` 的 `requireAuth` 分工。
 - **[結果]** 一律用狀態回傳、不丟例外（取消與失敗是正常結果）。
 - **[限制]** 驗證結果是客戶端判斷，不是伺服器憑證，寫進 README。
-- **[流程]** 直接 main、不建 issue（待核准時確認）。
+- **[流程]** 直接 main、不建 issue（使用者於核准閘確認）。
 
 ## Git Completion Policy
 - commit 自動；push 與 PR 依核准閘選項。
