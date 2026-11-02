@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "haptics",
+  "dart": {
+    "package": "aqutter_plugin_haptics",
+    "class": "HapticsPlugin"
+  }
+}

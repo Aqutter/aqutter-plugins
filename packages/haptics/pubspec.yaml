@@ -1,0 +1,27 @@
+name: aqutter_plugin_haptics
+description: Aqutter plugin — haptics.
+publish_to: 'none'
+version: 0.0.0
+
+environment:
+  sdk: '>=3.13.7 <4.0.0'
+  flutter: '>=3.47.8'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # App 與 plugin 必須使用同一個殼版本（git ref 相同），否則 pub 會解不出相依。
+  aqutter:
+    git:
+      url: https://github.com/Aqutter/aqutter.git
+      path: shell
+      ref: 0.0.0
+
+  # 需要原生能力時，在這裡加上既有的 Flutter plugin（例如 battery_plus）；
+  # 其原生部分由 Flutter 工具鏈在 App 建置時自動整合，不需要額外設定。
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
