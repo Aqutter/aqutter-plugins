@@ -15,13 +15,13 @@ class SecureStoragePlugin extends AqutterPlugin {
   @override
   String get id => 'secure-storage';
 
-  /// Linux 需要 libsecret、Windows 的底層實作需要 ATL，第一版都不支援（契約 §1 rev 2）；
-  /// 這兩個平台上網頁端的呼叫回 `undefined`。
+  /// Linux 需要 libsecret 且行為差距大，第一版不支援（契約 §1）。
   @override
   Set<TargetPlatform>? get supportedPlatforms => const {
         TargetPlatform.android,
         TargetPlatform.iOS,
         TargetPlatform.macOS,
+        TargetPlatform.windows,
       };
 
   @override

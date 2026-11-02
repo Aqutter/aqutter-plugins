@@ -25,7 +25,7 @@
   - 裝置沒有設定任何驗證方式：`set(requireAuth: true)` 回 `auth_unavailable`，不降級成不驗證。
 - **iOS 存取時機**：預設「第一次解鎖後」（`afterFirstUnlock`，使用者選擇），背景任務也讀得到。
 - **備份**：Android 要把這個儲存從自動備份排除（Keystore 金鑰不會被還原，還原後資料無法解開），並在 README 與 `native.note` 說明。
-- 平台（第一版，rev 2）：Android、iOS、macOS；Windows 與 Linux 不支援（回 `UNSUPPORTED_PLATFORM`，網頁端轉成 `undefined`）。Windows 因底層需要 ATL 而不支援，App 以 `windows_stub` 覆寫讓建置免 ATL。
+- 平台（第一版）：Android、iOS、macOS、Windows 全功能；Linux 需要 libsecret，回報在能力表之外（`UNSUPPORTED_PLATFORM`）；`requireAuth` 只有 Android、iOS、macOS，桌面的 Windows 回 `auth_unavailable`。
 
 ## Cross-Repo Scope
 - **本計畫所屬 repo**: `aqutter-plugin-secure-storage`
@@ -85,7 +85,7 @@
 | `auth` | 1、2 的 `requireAuth` | `android.permission.USE_BIOMETRIC` | `NSFaceIDUsageDescription` | — | `note`：Android 的 `MainActivity` 必須繼承 `FlutterFragmentActivity` |
 
 ### 7. 變更紀錄
-- **rev 2（2026-11-02）**：第一版**不支援 Windows**（與 Linux 並列），Windows 上方法回 `UNSUPPORTED_PLATFORM`（網頁端轉成 `undefined`）。原因：`flutter_secure_storage` 的 Windows 實作需要 ATL，與「Windows 建置不多一個 ATL 相依」的要求衝突（使用者選擇）；以 `windows_stub` 替身讓 Windows 建置免 ATL。`requireAuth` 因此只有 Android、iOS、macOS。影響：契約 §1 的平台、§3 的 `auth_unavailable` 說明（Windows 不再用到）。
+- _(尚無)_
 
 ## Impact Files
 全部是新 repo 的新檔案（`(new)`）；骨架由 `aqutter plugin create secure-storage` 產生：

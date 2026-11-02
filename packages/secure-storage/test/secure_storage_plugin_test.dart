@@ -81,10 +81,10 @@ void main() {
     plugin = SecureStoragePlugin(backend: backend, probe: probe);
   });
 
-  test('id, handlers and supported platforms (no Linux, no Windows)', () {
+  test('id, handlers and supported platforms (no Linux)', () {
     expect(plugin.id, 'secure-storage');
     expect(plugin.handlers.keys, unorderedEquals(['set', 'get', 'has', 'delete', 'keys', 'clear', 'capabilities']));
-    expect(plugin.supportedPlatforms, {TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.macOS});
+    expect(plugin.supportedPlatforms, {TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.macOS, TargetPlatform.windows});
   });
 
   group('plain items', () {

@@ -10,7 +10,6 @@
   "files": [
     "src",
     "lib",
-    "windows_stub",
     "pubspec.yaml",
     "aqutter-plugin.json",
     "README.md"
