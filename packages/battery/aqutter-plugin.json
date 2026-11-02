@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "battery",
+  "dart": {
+    "package": "aqutter_plugin_battery",
+    "class": "BatteryPlugin"
+  }
+}
