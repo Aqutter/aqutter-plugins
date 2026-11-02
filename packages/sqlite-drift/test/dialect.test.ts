@@ -28,6 +28,15 @@ describe('AqutterSqliteDialect', () => {
     responder = () => ({ ok: true })
   })
 
+  it('refuses to run a query when the plugin cannot run here, instead of silently dropping it', async () => {
+    // callPlugin 在 plugin 用不了的平台回 undefined；資料庫不能回「空結果」（寫入會被默默丟掉）
+    responder = method => (method === 'open' ? { ok: true } : undefined)
+    const db = newDb({ name: 'app' })
+
+    await expect(db.selectFrom('people').selectAll().execute()).rejects.toThrow(/not available on this platform/)
+    await expect(db.insertInto('people').values({ id: 1, name: 'a', avatar: null }).execute()).rejects.toThrow(/was not executed/)
+  })
+
   it('opens the database with the name once, on first use', async () => {
     responder = method => (method === 'open' ? { ok: true } : { rows: [] })
     const db = newDb({ name: 'app' })

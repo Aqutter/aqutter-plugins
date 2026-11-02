@@ -56,19 +56,23 @@ declare module '@aqutter/aqutter' {
 }
 
 /**
- * 網頁端 API。失敗時 `callPlugin` 拋出 `AqutterPluginError`，其 `code` 是契約的錯誤碼
+ * 網頁端 API。**plugin 在這個平台用不了時不拋錯**（`callPlugin` 回 `undefined`），各方法回安全的預設值：
+ * `list`／`grant`／`grants` 回 `[]`、`stat` 回 `{ exists: false }`、`read` 回空內容且 `eof`、`write` 回 0、
+ * `saveToDownloads` 回 `cancelled`，其餘不做事。要事先判斷用 `isPluginSupported('file-manager', <方法>)`。
+ *
+ * 失敗時 `callPlugin` 拋出 `AqutterPluginError`，其 `code` 是契約的錯誤碼
  * （`invalid_path`、`not_found`、`already_exists`、`not_a_directory`、`is_a_directory`、`not_empty`、
  * `too_large`、`permission_denied`、`cross_root_unsupported`）。
  */
 export const fileManager = {
-  list: async (location: FileLocation): Promise<FileEntry[]> => (await callPlugin('file-manager', 'list', { location })).entries,
-  stat: (location: FileLocation) => callPlugin('file-manager', 'stat', { location }),
+  list: async (location: FileLocation): Promise<FileEntry[]> => (await callPlugin('file-manager', 'list', { location }))?.entries ?? [],
+  stat: async (location: FileLocation) => (await callPlugin('file-manager', 'stat', { location })) ?? { exists: false as boolean },
   /** 讀取 `offset` 起至多 `length` 位元組（預設與上限 {@link MAX_CONTENT_BYTES}）；`eof` 為 true 代表已讀到檔尾。 */
-  read: (location: FileLocation, options: { offset?: number, length?: number } = {}) =>
-    callPlugin('file-manager', 'read', { location, ...options }),
+  read: async (location: FileLocation, options: { offset?: number, length?: number } = {}) =>
+    (await callPlugin('file-manager', 'read', { location, ...options })) ?? { data: new Uint8Array(0), eof: true },
   /** 回傳寫入後的檔案大小。 */
   write: async (location: FileLocation, data: Uint8Array, mode: WriteMode = 'create'): Promise<number> =>
-    (await callPlugin('file-manager', 'write', { location, data, mode })).size,
+    (await callPlugin('file-manager', 'write', { location, data, mode }))?.size ?? 0,
   makeDirectory: async (location: FileLocation, options: { recursive?: boolean } = {}): Promise<void> => {
     await callPlugin('file-manager', 'makeDirectory', { location, ...options })
   },
@@ -86,9 +90,9 @@ export const fileManager = {
    * 取消回空陣列。授權會持久保存；資料夾授權用 `granted:<id>/子/路徑`，單一檔案授權用 `granted:<id>`（沒有子路徑）。
    * 目前只有桌面平台（Windows、macOS、Linux）。
    */
-  grant: async (kind: 'file' | 'files' | 'directory'): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grant', { kind })).grants,
+  grant: async (kind: 'file' | 'files' | 'directory'): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grant', { kind }))?.grants ?? [],
   /** 目前所有授權；實際位置已不存在的授權仍會列出，操作時回 `permission_denied`。 */
-  grants: async (): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grants', {})).grants,
+  grants: async (): Promise<FileGrant[]> => (await callPlugin('file-manager', 'grants', {}))?.grants ?? [],
   /** 撤銷授權；只刪除授權紀錄，不會動到實際的檔案。 */
   revoke: async (id: string): Promise<void> => {
     await callPlugin('file-manager', 'revoke', { id })
@@ -108,6 +112,6 @@ export const fileManager = {
     mimeType: string,
   ): Promise<'saved' | 'exported' | 'cancelled'> => {
     const request = 'data' in content ? { name, mimeType, data: content.data } : { name, mimeType, from: content.from }
-    return (await callPlugin('file-manager', 'saveToDownloads', request)).status
+    return (await callPlugin('file-manager', 'saveToDownloads', request))?.status ?? 'cancelled'
   },
 }

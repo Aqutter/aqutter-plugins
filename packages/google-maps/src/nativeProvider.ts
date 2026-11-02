@@ -37,7 +37,8 @@ export const createNativeView = async (
 
   const view: GoogleMapsView = {
     provider: 'native',
-    getCamera: () => callPlugin('google-maps', 'getCamera'),
+    // 原生地圖用不了時（只有在 isPluginSupported 為 false 卻仍呼叫才會發生）回 0,0,0，不拋錯
+    getCamera: async () => (await callPlugin('google-maps', 'getCamera')) ?? { lat: 0, lng: 0, zoom: 0 },
     moveTo: async (lat: number, lng: number, move: GoogleMapsMoveOptions = {}) => {
       await callPlugin('google-maps', 'moveTo', { lat, lng, ...move })
     },

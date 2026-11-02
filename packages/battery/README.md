@@ -25,7 +25,7 @@ if (battery.isSupported()) {
 
 | 方法 / 事件 | 說明 |
 |---|---|
-| `level()` | 電量百分比 |
+| `level()` | 電量百分比（0–100）；plugin 在這個平台用不了時回 `null` |
 | `state()` | 充電狀態 |
 | `isInSaveMode()` | 是否為省電模式 |
 | `onStateChanged(listener)` | 充電狀態改變事件（頻道 `battery.stateChanged`） |

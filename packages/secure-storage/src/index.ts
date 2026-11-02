@@ -37,6 +37,10 @@ declare module '@aqutter/aqutter' {
  * `invalid_key`、`too_large`、`auth_unavailable`、`auth_cancelled`、`auth_failed`、`key_invalidated`、`storage_error`。
  *
  * 值是字串；二進位資料請自行 base64。
+ *
+ * **plugin 在這個平台用不了時不拋錯**（`callPlugin` 回 `undefined`）：`get` 回 `null`、`has` 回 `false`、`keys` 回 `[]`、
+ * `capabilities` 回 `{ auth: false, biometrics: false }`，`set`、`delete`、`clear` 不做事。
+ * 注意：這表示 `set` 在用不了的平台上**不會真的存下機密**；要確認請用 `isPluginSupported('secure-storage', 'set')`。
  */
 export const secureStorage = {
   /**
@@ -49,18 +53,19 @@ export const secureStorage = {
   },
   /** 項目不存在回 null（不是錯誤）；需要驗證的項目會出現系統的驗證視窗，使用者取消回 `auth_cancelled`。 */
   get: async (key: string, options: { prompt?: string } = {}): Promise<string | null> =>
-    (await callPlugin('secure-storage', 'get', { key, ...options })).value,
+    (await callPlugin('secure-storage', 'get', { key, ...options }))?.value ?? null,
   /** 不會出現驗證視窗。 */
-  has: async (key: string): Promise<boolean> => (await callPlugin('secure-storage', 'has', { key })).exists,
+  has: async (key: string): Promise<boolean> => (await callPlugin('secure-storage', 'has', { key }))?.exists ?? false,
   /** 項目不存在也算成功；刪除不需要驗證。 */
   delete: async (key: string): Promise<void> => {
     await callPlugin('secure-storage', 'delete', { key })
   },
   /** 只列這個 plugin 寫的鍵，不含值，也不會出現驗證視窗。 */
-  keys: async (): Promise<string[]> => (await callPlugin('secure-storage', 'keys', {})).keys,
+  keys: async (): Promise<string[]> => (await callPlugin('secure-storage', 'keys', {}))?.keys ?? [],
   /** 只清這個 plugin 寫的項目。 */
   clear: async (): Promise<void> => {
     await callPlugin('secure-storage', 'clear', {})
   },
-  capabilities: (): Promise<SecureStorageCapabilities> => callPlugin('secure-storage', 'capabilities', {}),
+  capabilities: async (): Promise<SecureStorageCapabilities> =>
+    (await callPlugin('secure-storage', 'capabilities', {})) ?? { auth: false, biometrics: false },
 }

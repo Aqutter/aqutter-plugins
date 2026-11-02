@@ -15,7 +15,8 @@
     "README.md"
   ],
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "peerDependencies": {
     "@aqutter/aqutter": "*"
@@ -26,7 +27,8 @@
     }
   },
   "devDependencies": {
-    "@aqutter/aqutter": "github:Aqutter/aqutter-js#ac7c23b6f8030d97dafa2c798ceb97a90382f6bf",
-    "typescript": "^5.7.0"
+    "@aqutter/aqutter": "github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663",
+    "typescript": "^5.7.0",
+    "vitest": "^3.2.7"
   }
 }

@@ -27,7 +27,7 @@
     }
   },
   "devDependencies": {
-    "@aqutter/aqutter": "github:Aqutter/aqutter-js#2f5de5d2a4ea9808d402658bb1c53a54cd535911",
+    "@aqutter/aqutter": "github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663",
     "@types/google.maps": "^3.66.7",
     "happy-dom": "^17.6.3",
     "typescript": "^5.7.0",

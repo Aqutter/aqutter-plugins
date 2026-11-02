@@ -107,6 +107,11 @@ class SqliteConnection implements DatabaseConnection {
       sql: compiledQuery.sql,
       bind: compiledQuery.parameters as SqliteValue[],
     })
+    if (res === undefined) {
+      // 資料庫是例外：其他 plugin 用不了時回安全預設值，但這裡若回空結果，寫入會被默默丟掉、讀取會像「沒有資料」，
+      // 比錯誤更危險，所以明確拋錯。
+      throw new Error('sqlite plugin is not available on this platform or in this app (the query was not executed)')
+    }
 
     const rows = (res.rows ?? []) as R[]
     if (rows.length > 0) {

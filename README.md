@@ -41,6 +41,7 @@ pnpm verify         # 以上全部
 - plugin id、npm 套件名（`aqutter-plugin-<dir>`）與 Dart 套件名不因為搬進這個 repo 而改變。
 - 每個 package 的殼版本（`pubspec.yaml` 的 `aqutter` git ref）要與使用它的 App 一致。
 - 開發階段版本統一為 `0.0.0`。
+- **plugin 用不了的平台不拋錯**：網頁端 `callPlugin` 回 `undefined`（開發階段才在 console 警告），各 plugin 的網頁 API 回安全的預設值（列表回 `[]`、讀取回 `null`、寫入不做事），並在自己的 README 說明；想事先判斷用 `isPluginSupported`。唯一的例外是 `sqlite-drift`：資料庫用不了時明確拋錯，因為回空結果會默默丟掉寫入。
 - 第三方或自己寫的 plugin 不需要放進這個 repo；`aqutter plugin create` 產生的範本可以獨立成一個 repo。
 
 治理文件在 `.kn-project/`（計畫與歸檔）；從各舊 repo 搬來的歸檔在 `.kn-project/archive/legacy-plugin-repos/`。
