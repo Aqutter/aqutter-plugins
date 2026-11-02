@@ -22,6 +22,10 @@ Aqutter plugin：`secure-storage`。把小量機密（登入 token、金鑰）�
 
 平台：Android、iOS、macOS、Windows。**`requireAuth` 只有 Android、iOS、macOS**；Windows 回 `auth_unavailable`（不會默默存成不需驗證）。**不支援 Linux**（需要 libsecret，行為差距大）。
 
+### Windows 建置需要 ATL
+
+`flutter_secure_storage` 的 Windows 實作用到 ATL（`atlstr.h`）。用到這個 plugin 的 App 要在 Visual Studio（或 Build Tools）安裝：**適用於最新 v143 建置工具的 C++ ATL (x86 & x64)**（個別元件，搜尋 ATL）。沒裝會在編譯時出現 `無法開啟包含檔案: 'atlstr.h'`。只有用了這個 plugin 的 App 才有這個需求，殼本身與其他 plugin 不需要 ATL。
+
 ## 安裝
 
 ```bash
