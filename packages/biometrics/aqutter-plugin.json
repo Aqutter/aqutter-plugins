@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "biometrics",
+  "dart": {
+    "package": "aqutter_plugin_biometrics",
+    "class": "BiometricsPlugin"
+  }
+}
