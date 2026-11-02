@@ -2,14 +2,14 @@
 
 Aqutter plugin：`file-manager`。讓網頁在 App 自己的資料夾裡讀、寫與管理檔案。同一個 repo 同時是 npm 套件（網頁端 API）與 Dart 套件（Flutter 端）。
 
-> **進度**：`sandbox`、`gallery`、`downloads` 的 Dart 端與網頁端已完成；`granted`（使用者授權的位置）目前**只有桌面平台**（Windows、macOS、Linux），Android 與 iOS 尚未實作（那兩個平台上 `grant`、`grants`、`revoke` 回 `UNSUPPORTED_PLATFORM`）。目前只有在 Windows 以單元測試驗證桌面的授權，其餘平台尚未實機驗證。macOS 的沙盒 App（Mac App Store）需要 bookmark 才能跨重新啟動保留授權，尚未處理。
+> **進度**：`sandbox`、`gallery`、`downloads` 與 Android 的 `granted` 已在 Android 實機驗證（Zenfone 8，release 建置）：資料夾授權、寫入、讀取、列出、搬移、遞迴刪除、重新啟動後不必重新授權、存到相簿、系統另存視窗。桌面（Windows、macOS、Linux）的 `granted` 只有 Windows 的單元測試。**iOS 的 `granted` 尚未實作**（`grant`、`grants`、`revoke` 回 `UNSUPPORTED_PLATFORM`），macOS 沙盒 App（Mac App Store）需要 bookmark 才能跨重新啟動保留授權，也尚未處理。
 
 ## 範圍
 
 | 功能 | 做什麼 | 原生設定 | 狀態 |
 |---|---|---|---|
 | `sandbox` | App 自己的資料夾（文件、支援、快取、暫存）：列、讀、寫、複製、移動、刪除、建資料夾、查資訊 | 不需要 | 🟢 |
-| `granted` | 使用者用選擇器授權的檔案或資料夾，授權可持久保存 | 不需要 | 🟢 桌面（只在 Windows 單元測試驗證）／🚧 Android、iOS |
+| `granted` | 使用者用選擇器授權的資料夾（桌面也可授權單一檔案），授權可持久保存 | 不需要 | 🟢 Android（實機驗證，只支援資料夾）、桌面（Windows 單元測試）／🚧 iOS |
 | `gallery` | 存圖到相簿（Android、iOS），只收 PNG 與 JPEG | iOS 相簿說明文字；Android 9 以前寫入權限 | 🟢（未實機驗證） |
 | `downloads` | 開啟系統的「另存」視窗，讓使用者選存放位置（iOS 是匯出） | 不需要 | 🟢（未實機驗證） |
 
@@ -39,7 +39,9 @@ aqutter plugin add aqutter-plugin-file-manager --features sandbox    # 只用 Ap
 
 相對路徑以 `/` 分段，不得有 `.`、`..`、空段、反斜線或控制字元；每段 ≤ 255、總長 ≤ 1024。解析符號連結後必須仍在根之內。
 
-資料夾授權用 `granted:<id>/子/路徑`，單一檔案授權用 `granted:<id>`（沒有子路徑，只能讀、覆寫或刪除那個檔案，不能複製或搬移）。授權清單存在 `shared_preferences`，不在 App 資料夾裡，網頁無法竄改。
+**Android 的授權只支援 `directory`**（系統的單一檔案授權無法持久保存，`file`、`files` 回 `UNSUPPORTED_PLATFORM`）；撤銷只刪除這個 plugin 的紀錄，Android 系統層保留的授權在清除 App 資料前仍存在（Android 對每個 App 可持久授權的數量有上限）。
+
+資料夾授權用 `granted:<id>/子/路徑`，單一檔案授權（桌面）用 `granted:<id>`（沒有子路徑，只能讀、覆寫或刪除那個檔案，不能複製或搬移）。授權清單存在 `shared_preferences`，不在 App 資料夾裡，網頁無法竄改。
 
 ## 網頁端
 

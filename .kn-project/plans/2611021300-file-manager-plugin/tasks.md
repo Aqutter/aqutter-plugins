@@ -14,10 +14,10 @@
 ## Phase 3 — granted
 - [x] 授權清單持久化（shared_preferences，網頁無法經由 sandbox 位置竄改）
 - [x] 桌面：grant、grants、revoke 與授權範圍內的操作（Dart 單元測試；只在 Windows 驗證）
-- [ ] Android 樹狀授權（SAF；需在實機驗證）
+- [x] Android 樹狀授權（SAF；只支援資料夾；已在 Zenfone 8 實機驗證）
 - [ ] iOS bookmark、macOS 沙盒 bookmark（本機無法編譯驗證）
 
 ## Phase 4 — 驗證與文件
 - [ ] 單元測試、`flutter analyze`
 - [ ] README（範圍、不做清單、原生設定）
-- [ ] 範例 App 接入與實機驗證（另開計畫）
+- [x] 範例 App 接入與 Android 實機驗證（暫時接入，未提交）

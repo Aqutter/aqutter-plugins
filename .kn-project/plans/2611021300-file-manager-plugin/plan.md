@@ -93,6 +93,7 @@
 | `downloads` | 13 | 無（系統另存視窗） | 無 | 無 | rev 2：原先 Android 9 以前需要寫入權限，改用系統視窗後不需要 |
 
 ### 7. 變更紀錄
+- **平台註記（2026-11-02）**：Android 的 `grant` 只支援 `directory`（`saf_util` 的單一檔案選擇沒有持久授權，重開機後會失效），`file`、`files` 回 `UNSUPPORTED_PLATFORM`；桌面三種都支援。這是對 §1 #9 的平台限制說明，不改方法與欄位。
 - **rev 2（2026-11-02）**：`saveToDownloads` 改為開啟系統的「另存」視窗（`file_picker.saveFile`），不再靜默寫入下載資料夾；`downloads` 不再需要 Android 寫入權限；`from` 的上限 50 MiB（不經 bridge）。原因：Android 靜默寫入需自寫 MediaStore 原生程式、iOS 仍只能用匯出視窗，行為不一致；系統視窗四個平台一致且免權限（使用者選擇）。影響：只有本 repo，尚無消費者。
 
 ## Impact Files
