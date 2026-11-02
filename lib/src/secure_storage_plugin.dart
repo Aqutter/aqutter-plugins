@@ -1,42 +1,62 @@
-import 'dart:async';
-
 import 'package:aqutter/aqutter.dart';
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform;
 
-/// `secure-storage` plugin 的 Dart 端。
+import 'secure_store.dart';
+
+/// `secure-storage` plugin 的 Dart 端：把機密存進系統的安全儲存，可要求使用者驗證才能讀出。
 ///
-/// 網頁端經 `callPlugin('secure-storage', 'ping', …)` 呼叫 [handlers]；
-/// 本類別也示範主動對網頁派送事件（[attach]）與疊 UI（[buildOverlay]）。
+/// 值只會在成功的 `get` 回給網頁；錯誤訊息與日誌不含鍵與值。
 class SecureStoragePlugin extends AqutterPlugin {
-  AqutterPluginContext? _context;
-  Timer? _timer;
-  int _count = 0;
+  SecureStoragePlugin({SecureBackend? backend, AuthProbe? probe})
+      : _store = SecureStore(backend: backend ?? FlutterSecureBackend(), probe: probe ?? LocalAuthProbe());
+
+  final SecureStore _store;
 
   @override
   String get id => 'secure-storage';
 
+  /// Linux 需要 libsecret 且行為差距大，第一版不支援（契約 §1）。
   @override
-  Map<String, AqutterPluginHandler> get handlers => {
-        'ping': (payload) async => {'echo': payload['message'] ?? ''},
+  Set<TargetPlatform>? get supportedPlatforms => const {
+        TargetPlatform.android,
+        TargetPlatform.iOS,
+        TargetPlatform.macOS,
+        TargetPlatform.windows,
       };
 
   @override
-  void attach(AqutterPluginContext context) {
-    _context = context;
-    // 範例事件：每秒對網頁派送一次 tick。實際 plugin 請改成自己的事件來源。
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
-      _count += 1;
-      _context?.emit('tick', {'count': _count});
-    });
-  }
+  Map<String, AqutterPluginHandler> get handlers => {
+        'set': _guard((payload) async {
+          await _store.set(payload['key'], payload['value'], requireAuth: payload['requireAuth'] == true, prompt: payload['prompt']);
+          return <String, dynamic>{};
+        }),
+        'get': _guard((payload) async => {'value': await _store.get(payload['key'], prompt: payload['prompt'])}),
+        'has': _guard((payload) async => {'exists': await _store.has(payload['key'])}),
+        'delete': _guard((payload) async {
+          await _store.delete(payload['key']);
+          return <String, dynamic>{};
+        }),
+        'keys': _guard((payload) async => {'keys': await _store.keys()}),
+        'clear': _guard((payload) async {
+          await _store.clear();
+          return <String, dynamic>{};
+        }),
+        'capabilities': _guard((payload) async {
+          final capabilities = await _store.capabilities();
+          return {'auth': capabilities.auth, 'biometrics': capabilities.biometrics};
+        }),
+      };
 
-  @override
-  Widget? buildOverlay(BuildContext context) => null;
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    _timer = null;
-    _context = null;
+  /// 把契約的錯誤轉成殼的錯誤資料；底層的例外先經 [mapStorageError] 對應，訊息不含鍵與值。
+  AqutterPluginHandler _guard(AqutterPluginHandler handler) {
+    return (payload) async {
+      try {
+        return await handler(payload);
+      }
+      catch (error) {
+        final mapped = mapStorageError(error);
+        return aqutterErrorPayload(mapped.code, mapped.message);
+      }
+    };
   }
 }

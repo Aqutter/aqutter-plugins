@@ -4,7 +4,7 @@
 - Issue: N/A（無 issue 追蹤基準）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: Planning
+- Status: In Progress
 - Completed: [Wait for Finish]
 
 ## Goals
@@ -35,7 +35,7 @@
 - **跨 repo 檔案指涉**: `aqutter` 的 `docs/plugins.md`「宣告原生設定」是描述檔 `native` 的契約。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter-plugin-secure-storage`　**修訂號**: `rev 1`　**狀態**: `草擬`
+- **契約正本 repo**: `aqutter-plugin-secure-storage`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-02）`
 
 ### 1. 方法（`callPlugin('secure-storage', <method>, payload)`）
 | # | 方法 | 功能 | 請求 | 回應 |
@@ -107,26 +107,27 @@
 - **決議**：`afterFirstUnlock`　狀態：✅ 已確認
 
 ### Q3. 單一值上限 — 影響範圍：契約 §2
-- [ ] 64 KiB（建議：token 與金鑰足夠；Keychain 不適合存大物件）
+- [x] 64 KiB（建議：token 與金鑰足夠；Keychain 不適合存大物件）
 - [ ] 16 KiB
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：已確認（照建議）　狀態：✅ 已確認
 
 ### Q4. 是否把 Linux 納入 — 影響範圍：`supportedPlatformsFor`、README
-- [ ] 第一版不支援 Linux（建議：需要使用者裝 libsecret，行為與其他平台差距大，且我無法在這台機器驗證）
+- [x] 第一版不支援 Linux（建議：需要使用者裝 libsecret，行為與其他平台差距大，且我無法在這台機器驗證）
 - [ ] 納入，並在 README 寫明 libsecret 需求
-- **決議**：_(待確認)_　狀態：⏳ 待確認
+- **決議**：已確認（照建議）　狀態：✅ 已確認
 
 ## Manual Follow-ups / 人工收尾事項
 - **[上線前]** 用到 `auth` 功能的 App 要補 `NSFaceIDUsageDescription`、Android 的 `USE_BIOMETRIC` 與 `FlutterFragmentActivity`，並設定 Android 自動備份排除 — `aqutter doctor` 會檢查前兩項，備份規則 CLI 檢查不到 — 屬使用者的原生檔，agent 不代改。
 - **[合併後]** iOS 與 macOS 的 Keychain 與驗證流程需要在 Apple 裝置上驗證 — 這台機器無法編譯 Swift — 由使用者另行測試。
 
 ## Key Decisions
+- **[Q3]** 單一值上限 64 KiB；**[Q4]** 第一版不支援 Linux（使用者核准計畫時照建議）。
 - **[範圍]** 簡單鍵值＋存取條件（使用者選擇）。
 - **[iOS 存取時機]** `afterFirstUnlock`（使用者選擇）。
 - **[套件]** 以 `flutter_secure_storage` v11 為主，不自己寫加密 — 理由：安全相關程式碼自寫風險高，且該版本已支援生物辨識綁定；套件獨立更新也避免拖慢殼的版本。
 - **[分離]** 與 `shared_preferences` 分開，網頁層可自行統一介面（先前討論）。
 - **[名稱與建立 repo]** `aqutter-plugin-secure-storage`，已在 GitHub Aqutter 組織建立公開 repo（使用者先前同意）。
-- **[流程]** 直接 main、不建 issue（待核准時確認）。
+- **[流程]** 直接 main、不建 issue（使用者於核准閘確認）。
 
 ## Git Completion Policy
 - commit 自動；push 與 PR 依核准閘選項。
