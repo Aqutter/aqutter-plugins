@@ -14,4 +14,4 @@
 ## Phase 3 — 驗證與文件
 - [x] 單元測試、`flutter analyze`
 - [x] README（範圍、原生設定、備份排除）
-- [ ] 範例 App 接入與 Android 實機驗證
+- [x] 範例 App 接入與 Android 實機驗證（一般項目與 `auth_unavailable`；`requireAuth` 成功路徑需要有螢幕鎖定的裝置，待測）
