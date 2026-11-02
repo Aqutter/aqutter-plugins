@@ -1,0 +1,33 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      '@aqutter/aqutter':
+        specifier: github:Aqutter/aqutter-js#ac7c23b6f8030d97dafa2c798ceb97a90382f6bf
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/ac7c23b6f8030d97dafa2c798ceb97a90382f6bf
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+packages:
+
+  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/ac7c23b6f8030d97dafa2c798ceb97a90382f6bf':
+    resolution: {gitHosted: true, integrity: sha512-eoyVLGSfG0r2PMqI2n8QZ7NhDcePjpcAujWYYdZV9zKhLUvlNApK4x3UwzIA14mck5cdGg3tNpsvBgrOmFQSgA==, tarball: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/ac7c23b6f8030d97dafa2c798ceb97a90382f6bf}
+    version: 0.0.0
+
+  typescript@5.9.3:
+    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+snapshots:
+
+  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/ac7c23b6f8030d97dafa2c798ceb97a90382f6bf': {}
+
+  typescript@5.9.3: {}

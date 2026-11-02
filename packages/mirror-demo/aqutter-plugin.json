@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "id": "mirror-demo",
+  "dart": {
+    "package": "aqutter_plugin_mirror_demo",
+    "class": "MirrorDemoPlugin"
+  }
+}
