@@ -103,7 +103,7 @@ final RegExp _mimePattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-
 Future<Map<String, dynamic>> saveToDownloads(
   Map<String, dynamic> payload,
   FileSaveDialog dialog,
-  Uint8List Function(Location location) readFrom,
+  Future<Uint8List> Function() readFrom,
   TargetPlatform platform,
 ) async {
   final name = validateFileName(payload['name']);
@@ -116,7 +116,7 @@ Future<Map<String, dynamic>> saveToDownloads(
   if ((data == null) == (from == null)) {
     throw const FileManagerException(errInvalidPath, 'data 與 from 必須擇一提供');
   }
-  late final Uint8List bytes;
+  final Uint8List bytes;
   if (data != null) {
     if (data is! Uint8List) {
       throw const FileManagerException(errInvalidPath, 'data 必須是二進位');
@@ -127,7 +127,7 @@ Future<Map<String, dynamic>> saveToDownloads(
     bytes = data;
   }
   else {
-    bytes = readFrom(parseLocation(from));
+    bytes = await readFrom();
   }
   if (!await dialog.save(bytes, name, mimeType)) {
     return {'status': 'cancelled'};

@@ -265,7 +265,7 @@ void main() {
     });
 
     test('a granted location with no such grant is not found', () async {
-      final plugin = FileManagerPlugin(grants: GrantManager(store: _MemoryGrantStore(), picker: _FakePicker([])));
+      final plugin = FileManagerPlugin(grants: GrantManager(store: _MemoryGrantStore(), picker: _FakePicker([]), platform: TargetPlatform.windows));
 
       expectError(await plugin.handlers['list']!({'location': 'granted:abc'}), errNotFound);
     });
@@ -448,7 +448,7 @@ void main() {
       store = _MemoryGrantStore();
       picker = _FakePicker([]);
       plugin = FileManagerPlugin(
-        grants: GrantManager(store: store, picker: picker),
+        grants: GrantManager(store: store, picker: picker, platform: TargetPlatform.windows),
         rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
       );
     });
@@ -580,9 +580,9 @@ void main() {
       expect((await call('grants', {}) as Map)['grants'], hasLength(1));
     });
 
-    test('grant, grants and revoke are desktop-only for now', () {
+    test('grant, grants and revoke are for Android and the desktop, not iOS yet', () {
       for (final method in ['grant', 'grants', 'revoke']) {
-        expect(plugin.supportedPlatformsFor(method), {TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux});
+        expect(plugin.supportedPlatformsFor(method), {TargetPlatform.android, TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux});
       }
     });
 
@@ -592,7 +592,7 @@ void main() {
       final dialog = _FakeDialog();
       final withDialog = FileManagerPlugin(
         saveDialog: dialog,
-        grants: GrantManager(store: store, picker: picker),
+        grants: GrantManager(store: store, picker: picker, platform: TargetPlatform.windows),
         rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
       );
 

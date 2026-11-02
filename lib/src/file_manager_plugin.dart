@@ -7,10 +7,12 @@ import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatf
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'file_ops.dart';
 import 'grants.dart';
 import 'local_file_ops.dart';
 import 'location.dart';
 import 'media_saver.dart';
+import 'saf_file_ops.dart';
 
 /// 取得 App 的資料夾；測試可注入。
 typedef SandboxRootResolver = Future<Directory> Function(String root);
@@ -32,7 +34,7 @@ Future<Directory> _defaultRoot(String root) {
 class _Target {
   const _Target(this.ops, this.segments, {this.isFileGrant = false});
 
-  final LocalFileOps ops;
+  final FileOps ops;
   final List<String> segments;
 
   /// 單一檔案的授權：只能對那個檔案本身操作。
@@ -65,7 +67,7 @@ class FileManagerPlugin extends AqutterPlugin {
   @override
   String get id => 'file-manager';
 
-  /// 相簿只有行動平台；授權目前只有桌面（行動平台的授權之後補上）；其他方法各平台都可用。
+  /// 相簿只有行動平台；授權有 Android 與桌面（iOS 之後補上）；其他方法各平台都可用。
   @override
   Set<TargetPlatform>? supportedPlatformsFor(String method) {
     switch (method) {
@@ -74,7 +76,7 @@ class FileManagerPlugin extends AqutterPlugin {
       case 'grant':
       case 'grants':
       case 'revoke':
-        return const {TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux};
+        return const {TargetPlatform.android, TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux};
       default:
         return null;
     }
@@ -84,15 +86,15 @@ class FileManagerPlugin extends AqutterPlugin {
   Map<String, AqutterPluginHandler> get handlers => {
         'list': _guard((payload) async {
           final target = await _target(payload['location']);
-          return {'entries': target.ops.list(target.segments)};
+          return {'entries': await target.ops.list(target.segments)};
         }),
         'stat': _guard((payload) async {
           final target = await _target(payload['location']);
-          return target.ops.stat(target.segments);
+          return await target.ops.stat(target.segments);
         }),
         'read': _guard((payload) async {
           final target = await _target(payload['location']);
-          return target.ops.read(target.segments, offset: _optInt(payload, 'offset') ?? 0, length: _optInt(payload, 'length'));
+          return await target.ops.read(target.segments, offset: _optInt(payload, 'offset') ?? 0, length: _optInt(payload, 'length'));
         }),
         'write': _guard((payload) async {
           final target = await _target(payload['location']);
@@ -100,29 +102,29 @@ class FileManagerPlugin extends AqutterPlugin {
           if (data is! Uint8List) {
             throw const FileManagerException(errInvalidPath, 'data 必須是二進位');
           }
-          return {'size': target.ops.write(target.segments, data, payload['mode'] as String? ?? '')};
+          return {'size': await target.ops.write(target.segments, data, payload['mode'] as String? ?? '')};
         }),
         'makeDirectory': _guard((payload) async {
           final target = await _target(payload['location']);
           if (target.isFileGrant) {
             throw const FileManagerException(errNotADirectory, '這個授權是單一檔案，不能建資料夾');
           }
-          target.ops.makeDirectory(target.segments, recursive: payload['recursive'] == true);
+          await target.ops.makeDirectory(target.segments, recursive: payload['recursive'] == true);
           return <String, dynamic>{};
         }),
         'copy': _guard((payload) async {
           final (from, to) = await _targetPair(payload);
-          from.ops.copy(from.segments, to.segments, overwrite: payload['overwrite'] == true);
+          await from.ops.copy(from.segments, to.segments, overwrite: payload['overwrite'] == true);
           return <String, dynamic>{};
         }),
         'move': _guard((payload) async {
           final (from, to) = await _targetPair(payload);
-          from.ops.move(from.segments, to.segments, overwrite: payload['overwrite'] == true);
+          await from.ops.move(from.segments, to.segments, overwrite: payload['overwrite'] == true);
           return <String, dynamic>{};
         }),
         'delete': _guard((payload) async {
           final target = await _target(payload['location']);
-          target.ops.delete(target.segments, recursive: payload['recursive'] == true);
+          await target.ops.delete(target.segments, recursive: payload['recursive'] == true);
           return <String, dynamic>{};
         }),
         'grant': _guard((payload) async {
@@ -144,7 +146,7 @@ class FileManagerPlugin extends AqutterPlugin {
           return saveToDownloads(
             payload,
             _saveDialog,
-            (location) => target!.ops.readAll(target.segments, maxDownloadBytes),
+            () async => target!.ops.readAll(target.segments, maxDownloadBytes),
             _platform ?? defaultTargetPlatform,
           );
         }),
@@ -183,6 +185,9 @@ class FileManagerPlugin extends AqutterPlugin {
       return _Target(LocalFileOps(await _rootResolver(location.root)), location.segments);
     }
     final grant = await _grants.resolve(grantId);
+    if (_grants.usesSaf) {
+      return _Target(SafFileOps(grant.path, _grants.safBackend), location.segments);
+    }
     if (grant.isDirectory) {
       return _Target(LocalFileOps(Directory(grant.path)), location.segments);
     }

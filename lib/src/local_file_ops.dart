@@ -3,12 +3,13 @@ import 'dart:typed_data';
 
 import 'package:path/path.dart' as p;
 
+import 'file_ops.dart';
 import 'location.dart';
 
 /// 在一個根資料夾之內的檔案操作；根由呼叫端決定（App 的資料夾，或桌面上使用者授權的資料夾）。
 ///
 /// 位置已由 [parseLocation] 驗證過；這裡再做一道防線：解析符號連結後的真實路徑必須仍在根之內。
-class LocalFileOps {
+class LocalFileOps implements FileOps {
   LocalFileOps(this.root);
 
   final Directory root;

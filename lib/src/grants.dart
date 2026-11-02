@@ -2,11 +2,15 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:aqutter/aqutter.dart' show aqutterUnsupportedPlatform;
+
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'location.dart';
+import 'saf_file_ops.dart';
 
 /// 使用者授權的一個位置：一個資料夾（[kind] `directory`）或單一檔案（`file`）。
 ///
@@ -95,16 +99,71 @@ class FilePickerGrantPicker implements GrantPicker {
   }
 }
 
+/// Android：以 SAF 的資料夾選擇器取得持久授權。檔案層級的授權沒有持久化支援，所以只收 `directory`。
+class SafGrantPicker implements GrantPicker {
+  SafGrantPicker(this._backend);
+
+  final SafBackend _backend;
+
+  @override
+  Future<List<PickedItem>> pick(String kind) async {
+    if (kind != 'directory') {
+      throw const FileManagerException(aqutterUnsupportedPlatform, 'Android 的授權目前只支援 directory');
+    }
+    final picked = await _backend.pickDirectory();
+    return picked == null ? [] : [PickedItem(name: picked.name, path: picked.uri, isDirectory: true)];
+  }
+}
+
+/// 確認授權是否仍然有效；[Grant.path] 在桌面是實際路徑，在 Android 是 SAF 的樹狀 URI。
+typedef GrantChecker = Future<bool> Function(Grant grant);
+
+Future<bool> pathGrantChecker(Grant grant) async {
+  final type = FileSystemEntity.typeSync(grant.path);
+  return grant.isDirectory ? type == FileSystemEntityType.directory : type == FileSystemEntityType.file;
+}
+
 /// 授權清單的操作：新增、列出、撤銷、解析。
+///
+/// Android 走 SAF（[usesSaf]，需要 [safBackend]），其他平台直接用選到的實際路徑。
 class GrantManager {
-  GrantManager({GrantStore? store, GrantPicker? picker, Random? random})
-      : _store = store ?? PreferencesGrantStore(),
-        _picker = picker ?? FilePickerGrantPicker(),
-        _random = random ?? Random.secure();
+  GrantManager({
+    GrantStore? store,
+    GrantPicker? picker,
+    GrantChecker? checker,
+    SafBackend? safBackend,
+    TargetPlatform? platform,
+    Random? random,
+  })  : usesSaf = (platform ?? defaultTargetPlatform) == TargetPlatform.android,
+        _store = store ?? PreferencesGrantStore(),
+        _random = random ?? Random.secure(),
+        _safBackend = safBackend {
+    final saf = usesSaf ? this.safBackend : null;
+    _picker = picker ?? (saf != null ? SafGrantPicker(saf) : FilePickerGrantPicker());
+    _checker = checker ?? (saf != null ? ((grant) async => _safGrantValid(saf, grant)) : pathGrantChecker);
+  }
+
+  /// 授權位置是否走 SAF（Android）。
+  final bool usesSaf;
 
   final GrantStore _store;
-  final GrantPicker _picker;
+  late final GrantPicker _picker;
+  late final GrantChecker _checker;
   final Random _random;
+  SafBackend? _safBackend;
+
+  /// SAF 的後端；只有 [usesSaf] 時才會用到，第一次取用才建立。
+  SafBackend get safBackend => _safBackend ??= PlatformSafBackend();
+
+  static Future<bool> _safGrantValid(SafBackend backend, Grant grant) async {
+    try {
+      final root = await backend.child(grant.path, const []);
+      return root != null && root.isDir;
+    }
+    catch (_) {
+      return false; // 系統已撤銷授權（例如使用者清除了 App 資料或移除了該資料夾）
+    }
+  }
 
   static const List<String> kinds = ['file', 'files', 'directory'];
 
@@ -157,9 +216,7 @@ class GrantManager {
     if (grant == null) {
       throw FileManagerException(errNotFound, '沒有授權「$id」');
     }
-    final type = FileSystemEntity.typeSync(grant.path);
-    final valid = grant.isDirectory ? type == FileSystemEntityType.directory : type == FileSystemEntityType.file;
-    if (!valid) {
+    if (!await _checker(grant)) {
       throw const FileManagerException(errPermissionDenied, '授權的位置已不存在或已改變，請重新授權');
     }
     return grant;
