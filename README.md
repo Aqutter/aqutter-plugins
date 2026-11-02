@@ -32,9 +32,9 @@ aqutter plugin add aqutter-plugin-file-manager --features sandbox    # 只用 Ap
 
 | 位置 | 說明 |
 |---|---|
-| `app-documents:報表/a.pdf` | App 的文件資料夾 |
+| `app-documents:報表/a.pdf` | App 的文件資料夾（桌面平台是 App 支援資料夾底下的 `documents`，**不是**使用者的「文件」資料夾） |
 | `app-support:` | App 的支援資料夾（根本身） |
-| `app-cache:`、`app-temp:` | 快取與暫存，系統可能清除 |
+| `app-cache:`、`app-temp:` | 快取與暫存，系統可能清除（桌面的暫存是快取資料夾底下的 `temp`，不是系統共用暫存） |
 | `granted:<授權編號>/子/路徑` | 使用者授權的位置（`granted` 功能） |
 
 相對路徑以 `/` 分段，不得有 `.`、`..`、空段、反斜線或控制字元；每段 ≤ 255、總長 ≤ 1024。解析符號連結後必須仍在根之內。

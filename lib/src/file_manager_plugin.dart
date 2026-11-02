@@ -17,16 +17,25 @@ import 'saf_file_ops.dart';
 /// 取得 App 的資料夾；測試可注入。
 typedef SandboxRootResolver = Future<Directory> Function(String root);
 
-Future<Directory> _defaultRoot(String root) {
+/// 桌面平台的「文件」與「暫存」是使用者與其他程式共用的資料夾（例如 Windows 的文件資料夾、系統暫存），
+/// 不是這個 App 自己的；行動平台上它們是 App 專屬的。為了讓 `app-*` 一律只指 App 自己的資料夾，
+/// 桌面改在 App 的支援／快取資料夾底下各開一個子資料夾。
+bool get _isDesktop => const {TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux}.contains(defaultTargetPlatform);
+
+Future<Directory> _privateSubfolder(Directory base, String name) async {
+  return Directory(p.join(base.path, name)).create(recursive: true);
+}
+
+Future<Directory> _defaultRoot(String root) async {
   switch (root) {
     case 'app-documents':
-      return getApplicationDocumentsDirectory();
+      return _isDesktop ? _privateSubfolder(await getApplicationSupportDirectory(), 'documents') : getApplicationDocumentsDirectory();
     case 'app-support':
       return getApplicationSupportDirectory();
     case 'app-cache':
       return getApplicationCacheDirectory();
     default:
-      return getTemporaryDirectory();
+      return _isDesktop ? _privateSubfolder(await getApplicationCacheDirectory(), 'temp') : getTemporaryDirectory();
   }
 }
 
