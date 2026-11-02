@@ -2,7 +2,7 @@
 
 Aqutter plugin：`file-manager`。讓網頁在 App 自己的資料夾裡讀、寫與管理檔案。同一個 repo 同時是 npm 套件（網頁端 API）與 Dart 套件（Flutter 端）。
 
-> **進度**：`sandbox`（App 資料夾）與 `gallery`（存到相簿）的 Dart 端與網頁端已完成，尚未在實機驗證；`granted`（使用者授權的位置）、`downloads`（存到下載）尚未實作，對應的方法還不存在（`isPluginSupported` 為 false）。
+> **進度**：`sandbox`（App 資料夾）、`gallery`（存到相簿）與 `downloads`（存到下載）的 Dart 端與網頁端已完成，尚未在實機驗證；`granted`（使用者授權的位置）尚未實作，對應的方法還不存在（`isPluginSupported` 為 false）。
 
 ## 範圍
 
@@ -11,7 +11,7 @@ Aqutter plugin：`file-manager`。讓網頁在 App 自己的資料夾裡讀、�
 | `sandbox` | App 自己的資料夾（文件、支援、快取、暫存）：列、讀、寫、複製、移動、刪除、建資料夾、查資訊 | 不需要 | 🟢 |
 | `granted` | 使用者用選擇器授權的檔案或資料夾，授權可持久保存 | 不需要 | 🚧 |
 | `gallery` | 存圖到相簿（Android、iOS），只收 PNG 與 JPEG | iOS 相簿說明文字；Android 9 以前寫入權限 | 🟢（未實機驗證） |
-| `downloads` | 存檔到下載（iOS 用系統的匯出視窗） | Android 9 以前寫入權限 | 🚧 |
+| `downloads` | 開啟系統的「另存」視窗，讓使用者選存放位置（iOS 是匯出） | 不需要 | 🟢（未實機驗證） |
 
 **刻意不做**：
 
@@ -64,6 +64,8 @@ await fileManager.delete('app-documents:報表', { recursive: true })
 | `copy(from, to, { overwrite? })`、`move(...)` | 檔案與整個資料夾；兩端必須在同一個根 |
 | `delete(location, { recursive? })` | 非空資料夾要 `recursive`；根本身不能刪 |
 | `saveToGallery(data, name, mimeType)` | 存圖到相簿（Android、iOS）；`mimeType` 為 `image/png` 或 `image/jpeg`，位元組開頭須相符；權限被拒回 `permission_denied` |
+
+| `saveToDownloads({ data } \| { from }, name, mimeType)` | 開啟系統另存視窗；`data` ≤ 5 MiB，或用 `from`（App 資料夾的檔案，不經 bridge，上限 50 MiB）。回傳 `saved`、`exported`（iOS）或 `cancelled`（使用者取消，不算失敗） |
 
 失敗時拋出 `AqutterPluginError`，`code` 為：`invalid_path`、`not_found`、`already_exists`、`not_a_directory`、`is_a_directory`、`not_empty`、`too_large`、`permission_denied`、`cross_root_unsupported`。
 

@@ -3,7 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:aqutter/aqutter.dart';
-import 'package:flutter/foundation.dart' show TargetPlatform;
+import 'package:flutter/foundation.dart' show TargetPlatform, defaultTargetPlatform;
 import 'package:path_provider/path_provider.dart';
 
 import 'local_file_ops.dart';
@@ -31,12 +31,16 @@ Future<Directory> _defaultRoot(String root) {
 /// 網頁以位置字串（`app-documents:報表/a.pdf`）指定檔案，路徑驗證與根解析都在這裡，
 /// 網頁不會拿到各平台不同的實際路徑。
 class FileManagerPlugin extends AqutterPlugin {
-  FileManagerPlugin({SandboxRootResolver? rootResolver, GalleryWriter? gallery})
+  FileManagerPlugin({SandboxRootResolver? rootResolver, GalleryWriter? gallery, FileSaveDialog? saveDialog, TargetPlatform? platform})
       : _rootResolver = rootResolver ?? _defaultRoot,
-        _gallery = gallery ?? GalGalleryWriter();
+        _gallery = gallery ?? GalGalleryWriter(),
+        _saveDialog = saveDialog ?? FilePickerSaveDialog(),
+        _platform = platform;
 
   final SandboxRootResolver _rootResolver;
   final GalleryWriter _gallery;
+  final FileSaveDialog _saveDialog;
+  final TargetPlatform? _platform;
 
   @override
   String get id => 'file-manager';
@@ -50,6 +54,17 @@ class FileManagerPlugin extends AqutterPlugin {
   @override
   Map<String, AqutterPluginHandler> get handlers => {
         'saveToGallery': _guard((payload) => saveToGallery(payload, _gallery)),
+        'saveToDownloads': _guard((payload) async {
+          // 從位置讀檔是同步的檔案操作：先解析出該位置的 ops，再交給驗證函式
+          final from = payload['from'];
+          final ops = from == null ? null : await _opsFor(parseLocation(from));
+          return saveToDownloads(
+            payload,
+            _saveDialog,
+            (location) => ops!.readAll(location.segments, maxDownloadBytes),
+            _platform ?? defaultTargetPlatform,
+          );
+        }),
         'list': _guard((payload) async {
           final (ops, location) = await _ops(payload['location']);
           return {'entries': ops.list(location.segments)};

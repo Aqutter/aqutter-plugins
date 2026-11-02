@@ -107,6 +107,23 @@ class LocalFileOps {
     }
   }
 
+  /// 讀取整個檔案；超過 [limit] 位元組回 `too_large`。供「存到下載」這類在 Dart 內完成、不經 bridge 的用途。
+  Uint8List readAll(List<String> segments, int limit) {
+    final path = _checked(segments);
+    final type = _type(path);
+    if (type == FileSystemEntityType.notFound) {
+      throw const FileManagerException(errNotFound, '找不到檔案');
+    }
+    if (type == FileSystemEntityType.directory) {
+      throw const FileManagerException(errIsADirectory, '這是資料夾');
+    }
+    final file = File(path);
+    if (file.lengthSync() > limit) {
+      throw FileManagerException(errTooLarge, '檔案超過 $limit 位元組');
+    }
+    return file.readAsBytesSync();
+  }
+
   /// [mode]：`create`（已存在則失敗）、`overwrite`、`append`。回傳寫入後的檔案大小。
   int write(List<String> segments, Uint8List data, String mode) {
     if (!const {'create', 'overwrite', 'append'}.contains(mode)) {

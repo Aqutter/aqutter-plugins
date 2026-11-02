@@ -14,7 +14,7 @@
 2. **granted** — 使用者用選擇器授權的檔案或資料夾：授權可持久保存，在授權範圍內讀、列、寫、刪除。
 3. **gallery／downloads** — 存圖到相簿、存檔到下載。
 
-使用者可以只選用部分功能（`plugin add --features`），只有 `gallery`、`downloads` 會要求使用者補原生設定。
+使用者可以只選用部分功能（`plugin add --features`），只有 `gallery` 會要求使用者補原生設定（`downloads` 在 rev 2 改用系統視窗後也不需要）。
 
 ## Architecture
 - 全新 repo `aqutter-plugin-file-manager`，由 `aqutter plugin create file-manager` 產生骨架。Dart 端 `FileManagerPlugin`（id `file-manager`），網頁端 `fileManager` API。
@@ -22,7 +22,7 @@
 - **路徑驗證**：相對路徑不得為空段以外的 `..`、不得為絕對路徑、不含反斜線與 NUL，每段 ≤ 255、總長 ≤ 1024；解析符號連結後必須仍在根之內（沿用殼對下載檔名的驗證精神）。
 - **內容經過 bridge 的上限**：單次讀寫位元組 ≤ 5 MiB（與殼的剪貼簿圖片、分享一致），大檔案用 `offset`／`length` 與 `append` 分段。
 - **授權（granted）**：Android 用 Storage Access Framework 的樹狀授權並 `takePersistableUriPermission`；iOS 用 security-scoped bookmark；授權清單由 plugin 持久化（支援目錄下的 JSON），撤銷或失效回 `permission_denied`。
-- **相簿**：Android 10+ 走 MediaStore（不需權限），9 以前需寫入權限；iOS 走相簿新增 API。**下載**：Android 走 MediaStore 下載；iOS 沒有公開下載資料夾，改用系統的文件匯出視窗，結果回 `exported`。
+- **相簿**：Android 10+ 走 MediaStore（不需權限），9 以前需寫入權限；iOS 走相簿新增 API。**下載**：四個平台都開系統的「另存」視窗（`file_picker.saveFile`），不需要權限；iOS 是匯出，結果回 `exported`（rev 2，原為 Android 走 MediaStore 靜默寫入）。
 - **不做**：整機檔案存取（Android `MANAGE_EXTERNAL_STORAGE` 是 Google Play 受限權限；iOS 沒有等價物）、目錄監聽、跨根的搬移（跨根請用讀＋寫）。
 - 平台（第一版）：Android、iOS 全功能；macOS、Windows 支援 `sandbox`、`granted`（以選擇器取得路徑直接存取，macOS 處理沙盒 bookmark）與 `downloads`；`gallery` 只有 Android、iOS，其餘回 `UNSUPPORTED_PLATFORM`（以 `supportedPlatformsFor` 逐方法宣告）。
 
@@ -34,7 +34,7 @@
 - **跨 repo 檔案指涉**: `aqutter` 的 `docs/plugins.md`「宣告原生設定」是描述檔 `native` 的契約。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter-plugin-file-manager`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-02）`
+- **契約正本 repo**: `aqutter-plugin-file-manager`　**修訂號**: `rev 2`　**狀態**: `凍結（核准日 2026-11-02；rev 2 變更經使用者確認）`
 
 ### 1. 方法（`callPlugin('file-manager', <method>, payload)`；Dart 的 handler 名稱 `file-manager.<method>`）
 | # | 方法 | 功能 | 請求 | 回應 |
@@ -51,7 +51,7 @@
 | 10 | `grants` | granted | `{}` | `{ grants: { id, name, kind }[] }` |
 | 11 | `revoke` | granted | `{ id }` | `{}` |
 | 12 | `saveToGallery` | gallery | `{ data, name, mimeType }`，圖片 PNG／JPEG | `{ status: 'saved' }` |
-| 13 | `saveToDownloads` | downloads | `{ name, mimeType, data? , from? }`（`data` 與 `from` 擇一） | `{ status: 'saved'\|'exported'\|'cancelled' }` |
+| 13 | `saveToDownloads` | downloads | `{ name, mimeType, data? , from? }`（`data` 與 `from` 擇一；`from` 是 sandbox 或授權位置，可超過 5 MiB，上限 50 MiB） | `{ status: 'saved'\|'exported'\|'cancelled' }`；開啟系統的「另存」視窗，使用者選存放位置；iOS 回 `exported`，使用者取消回 `cancelled` |
 
 ### 2. 欄位與限制
 | 項目 | 規則 |
@@ -90,10 +90,10 @@
 | `sandbox` | 1–8（sandbox 位置） | 無 | 無 | 無 | — |
 | `granted` | 1–11（granted 位置） | 無 | 無 | 無 | 平台不支援的方法回 `UNSUPPORTED_PLATFORM` |
 | `gallery` | 12 | `WRITE_EXTERNAL_STORAGE`（`maxSdkVersion` 28） | `NSPhotoLibraryAddUsageDescription` | — | — |
-| `downloads` | 13 | `WRITE_EXTERNAL_STORAGE`（`maxSdkVersion` 28） | 無（用匯出視窗） | 無 | — |
+| `downloads` | 13 | 無（系統另存視窗） | 無 | 無 | rev 2：原先 Android 9 以前需要寫入權限，改用系統視窗後不需要 |
 
 ### 7. 變更紀錄
-- _(尚無)_
+- **rev 2（2026-11-02）**：`saveToDownloads` 改為開啟系統的「另存」視窗（`file_picker.saveFile`），不再靜默寫入下載資料夾；`downloads` 不再需要 Android 寫入權限；`from` 的上限 50 MiB（不經 bridge）。原因：Android 靜默寫入需自寫 MediaStore 原生程式、iOS 仍只能用匯出視窗，行為不一致；系統視窗四個平台一致且免權限（使用者選擇）。影響：只有本 repo，尚無消費者。
 
 ## Impact Files
 全部是新 repo 的新檔案（`(new)`）；骨架由 `aqutter plugin create file-manager` 產生，其餘依下列拆分：

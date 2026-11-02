@@ -8,7 +8,7 @@
 
 ## Phase 2 — gallery 與 downloads
 - [x] 相簿（以 gal 實作；Dart 端與測試完成，未實機驗證）
-- [ ] 下載（Android MediaStore、iOS 匯出視窗、桌面下載資料夾）
+- [x] 下載（改用系統另存視窗，契約 rev 2；Dart 端與測試完成，未實機驗證）
 - [x] 描述檔 `native.features` 宣告（已用 CLI 的解析驗證）
 
 ## Phase 3 — granted

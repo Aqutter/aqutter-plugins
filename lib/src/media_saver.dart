@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:gal/gal.dart';
 
 import 'location.dart';
@@ -73,4 +75,62 @@ Future<Map<String, dynamic>> saveToGallery(Map<String, dynamic> payload, Gallery
   final dot = name.lastIndexOf('.');
   await writer.putImage(data, dot > 0 ? name.substring(0, dot) : name);
   return {'status': 'saved'};
+}
+
+/// 系統的「另存」視窗；測試可注入。
+abstract class FileSaveDialog {
+  /// 使用者存下回 true，取消回 false。
+  Future<bool> save(Uint8List bytes, String name, String mimeType);
+}
+
+/// 以 `file_picker` 的存檔視窗實作：Android、iOS、macOS、Windows 都是系統視窗，不需要任何權限。
+class FilePickerSaveDialog implements FileSaveDialog {
+  @override
+  Future<bool> save(Uint8List bytes, String name, String mimeType) async {
+    return await FilePicker.saveFile(fileName: name, bytes: bytes, mimeType: mimeType) != null;
+  }
+}
+
+/// `saveToDownloads` 從 sandbox／授權位置讀檔的上限；比 [maxContentBytes] 大，因為不經過 bridge。
+const int maxDownloadBytes = 50 * 1024 * 1024;
+
+final RegExp _mimePattern = RegExp(r'^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$');
+
+/// 驗證 `saveToDownloads` 的參數並開啟存檔視窗。
+///
+/// 內容二擇一：`data`（≤ [maxContentBytes]）或 `from`（位置，由 [readFrom] 讀成位元組，≤ [maxDownloadBytes]）。
+/// 結果：存下為 `saved`（iOS 是匯出，回 `exported`），使用者取消為 `cancelled`。
+Future<Map<String, dynamic>> saveToDownloads(
+  Map<String, dynamic> payload,
+  FileSaveDialog dialog,
+  Uint8List Function(Location location) readFrom,
+  TargetPlatform platform,
+) async {
+  final name = validateFileName(payload['name']);
+  final mimeType = payload['mimeType'];
+  if (mimeType is! String || mimeType.length > 127 || !_mimePattern.hasMatch(mimeType)) {
+    throw const FileManagerException(errInvalidPath, 'mimeType 必須是合法的媒體型別，例如 application/pdf');
+  }
+  final data = payload['data'];
+  final from = payload['from'];
+  if ((data == null) == (from == null)) {
+    throw const FileManagerException(errInvalidPath, 'data 與 from 必須擇一提供');
+  }
+  late final Uint8List bytes;
+  if (data != null) {
+    if (data is! Uint8List) {
+      throw const FileManagerException(errInvalidPath, 'data 必須是二進位');
+    }
+    if (data.length > maxContentBytes) {
+      throw FileManagerException(errTooLarge, 'data 不得超過 $maxContentBytes 位元組；較大的檔案請先寫入 App 資料夾再用 from');
+    }
+    bytes = data;
+  }
+  else {
+    bytes = readFrom(parseLocation(from));
+  }
+  if (!await dialog.save(bytes, name, mimeType)) {
+    return {'status': 'cancelled'};
+  }
+  return {'status': platform == TargetPlatform.iOS ? 'exported' : 'saved'};
 }

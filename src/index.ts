@@ -30,6 +30,10 @@ export type FileManagerContract = PluginDefinition<
     move: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     delete: { req: { location: FileLocation, recursive?: boolean }, res: Record<string, never> }
     saveToGallery: { req: { data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg' }, res: { status: 'saved' } }
+    saveToDownloads: {
+      req: { name: string, mimeType: string } & ({ data: Uint8Array, from?: never } | { from: FileLocation, data?: never })
+      res: { status: 'saved' | 'exported' | 'cancelled' }
+    }
   },
   Record<string, never>
 >
@@ -70,5 +74,18 @@ export const fileManager = {
   /** 存圖到相簿（Android、iOS）。只收 PNG 與 JPEG，位元組開頭必須與 `mimeType` 相符，單次上限 {@link MAX_CONTENT_BYTES}。 */
   saveToGallery: async (data: Uint8Array, name: string, mimeType: 'image/png' | 'image/jpeg'): Promise<void> => {
     await callPlugin('file-manager', 'saveToGallery', { data, name, mimeType })
+  },
+  /**
+   * 開啟系統的「另存」視窗，讓使用者選存放位置（不需要權限）。內容二擇一：`data`（≤ {@link MAX_CONTENT_BYTES}），
+   * 或 `from`（App 資料夾或授權位置的檔案，不經 bridge，上限 50 MiB）。
+   * 回傳 `saved`（已存下）、`exported`（iOS 的匯出）或 `cancelled`（使用者取消，不算失敗）。
+   */
+  saveToDownloads: async (
+    content: { data: Uint8Array } | { from: FileLocation },
+    name: string,
+    mimeType: string,
+  ): Promise<'saved' | 'exported' | 'cancelled'> => {
+    const request = 'data' in content ? { name, mimeType, data: content.data } : { name, mimeType, from: content.from }
+    return (await callPlugin('file-manager', 'saveToDownloads', request)).status
   },
 }

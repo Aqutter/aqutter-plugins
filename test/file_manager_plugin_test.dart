@@ -25,6 +25,22 @@ class _FakeGallery implements GalleryWriter {
   }
 }
 
+class _FakeDialog implements FileSaveDialog {
+  _FakeDialog({this.cancel = false});
+
+  final bool cancel;
+  final List<(Uint8List, String, String)> saved = [];
+
+  @override
+  Future<bool> save(Uint8List bytes, String name, String mimeType) async {
+    if (cancel) {
+      return false;
+    }
+    saved.add((bytes, name, mimeType));
+    return true;
+  }
+}
+
 final Uint8List _png = Uint8List.fromList([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0]);
 final Uint8List _jpeg = Uint8List.fromList([0xff, 0xd8, 0xff, 0xe0, 0, 0]);
 
@@ -303,6 +319,84 @@ void main() {
       final plugin = FileManagerPlugin(gallery: _FakeGallery(denied: true));
 
       expectError(await save(plugin, {'data': _png, 'name': 'a.png', 'mimeType': 'image/png'}), errPermissionDenied);
+    });
+  });
+
+  group('saveToDownloads', () {
+    late Directory temp;
+
+    setUp(() => temp = Directory.systemTemp.createTempSync('file-manager-dl'));
+    tearDown(() => temp.deleteSync(recursive: true));
+
+    FileManagerPlugin make(_FakeDialog dialog, {TargetPlatform platform = TargetPlatform.android}) {
+      return FileManagerPlugin(
+        saveDialog: dialog,
+        platform: platform,
+        rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
+      );
+    }
+
+    Future<dynamic> save(FileManagerPlugin plugin, Map<String, dynamic> payload) => plugin.handlers['saveToDownloads']!(payload);
+
+    void expectError(dynamic result, String code) {
+      final error = aqutterErrorOf(result);
+      expect(error, isNotNull, reason: 'expected $code, got $result');
+      expect(error!.code, code);
+    }
+
+    test('saves given bytes through the dialog; the result is saved, or exported on iOS', () async {
+      final dialog = _FakeDialog();
+
+      final android = await save(make(dialog), {'data': _bytes('report'), 'name': 'r.pdf', 'mimeType': 'application/pdf'});
+      final ios = await save(make(dialog, platform: TargetPlatform.iOS), {'data': _bytes('report'), 'name': 'r.pdf', 'mimeType': 'application/pdf'});
+
+      expect(android, {'status': 'saved'});
+      expect(ios, {'status': 'exported'});
+      expect(dialog.saved.first.$2, 'r.pdf');
+      expect(dialog.saved.first.$3, 'application/pdf');
+    });
+
+    test('a cancelled dialog is reported as cancelled, not as a failure', () async {
+      final result = await save(make(_FakeDialog(cancel: true)), {'data': _bytes('x'), 'name': 'a.txt', 'mimeType': 'text/plain'});
+
+      expect(result, {'status': 'cancelled'});
+    });
+
+    test('from reads a file in the app folder, including one larger than the 5 MiB bridge limit', () async {
+      final dialog = _FakeDialog();
+      final plugin = make(dialog);
+      final big = Uint8List(maxContentBytes + 10);
+      File('${temp.path}/app-documents/big.bin')
+        ..createSync(recursive: true)
+        ..writeAsBytesSync(big);
+
+      final result = await save(plugin, {'from': 'app-documents:big.bin', 'name': 'big.bin', 'mimeType': 'application/octet-stream'});
+
+      expect(result, {'status': 'saved'});
+      expect(dialog.saved.single.$1.length, big.length);
+    });
+
+    test('from reports a missing file and a bad location', () async {
+      final plugin = make(_FakeDialog());
+
+      expectError(await save(plugin, {'from': 'app-documents:none', 'name': 'a', 'mimeType': 'text/plain'}), errNotFound);
+      expectError(await save(plugin, {'from': '../x', 'name': 'a', 'mimeType': 'text/plain'}), errInvalidPath);
+    });
+
+    test('exactly one of data and from is required', () async {
+      final plugin = make(_FakeDialog());
+
+      expectError(await save(plugin, {'name': 'a', 'mimeType': 'text/plain'}), errInvalidPath);
+      expectError(await save(plugin, {'data': _bytes('x'), 'from': 'app-cache:a', 'name': 'a', 'mimeType': 'text/plain'}), errInvalidPath);
+    });
+
+    test('rejects oversized data, a bad name and a bad media type', () async {
+      final plugin = make(_FakeDialog());
+
+      expectError(await save(plugin, {'data': Uint8List(maxContentBytes + 1), 'name': 'a', 'mimeType': 'text/plain'}), errTooLarge);
+      expectError(await save(plugin, {'data': _bytes('x'), 'name': '../a', 'mimeType': 'text/plain'}), errInvalidPath);
+      expectError(await save(plugin, {'data': _bytes('x'), 'name': 'a', 'mimeType': 'nonsense'}), errInvalidPath);
+      expectError(await save(plugin, {'data': _bytes('x'), 'name': 'a', 'mimeType': 7}), errInvalidPath);
     });
   });
 }

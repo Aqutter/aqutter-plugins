@@ -25,6 +25,7 @@ dependencies:
   path: ^1.9.0
   path_provider: ^2.1.5
   gal: ^2.3.3
+  file_picker: ^12.3.0
 
   # When native capabilities are needed, add an existing Flutter plugin here (e.g. battery_plus);
   # its native part is integrated automatically by the Flutter toolchain at app build time, no extra setup needed.
