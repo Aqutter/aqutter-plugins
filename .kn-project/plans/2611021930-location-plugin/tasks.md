@@ -12,5 +12,5 @@
 - [x] README 與根目錄清單、aqutter 文件清單
 
 ## Phase 3 — 範例 App
-- [ ] OpenStreetMap 示範頁（Leaflet）與原生設定
-- [ ] Android 實機與 Windows 驗證
+- [x] OpenStreetMap 示範頁（Leaflet）與原生設定（暫時以本機路徑接入，未提交）
+- [x] Android 實機與 Windows 驗證
