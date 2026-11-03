@@ -20,12 +20,20 @@ export interface FileGrant {
   kind: 'file' | 'directory'
 }
 
+/** 一次性選取的檔案；`location` 是 `picked:<編號>`，只能讀，App 重啟後失效。網頁看不到實際路徑。 */
+export interface PickedFile {
+  location: FileLocation
+  name: string
+  /** 位元組；取不到時省略。 */
+  size?: number
+}
+
 export type WriteMode ='create' | 'overwrite' | 'append'
 
 /** 單次讀寫的內容上限（位元組）；更大的檔案用 `offset`／`length` 與 `append` 分段。 */
 export const MAX_CONTENT_BYTES = 5 * 1024 * 1024
 
-/** 此 plugin 的契約：方法表。Dart 端 `FileManagerPlugin` 必須提供同名方法（契約 rev 1）。 */
+/** 此 plugin 的契約：方法表。Dart 端 `FileManagerPlugin` 必須提供同名方法（契約 rev 1）。`pick` 與 `picked:` 位置是後來新增的，不影響既有方法。 */
 export type FileManagerContract = PluginDefinition<
   {
     list: { req: { location: FileLocation }, res: { entries: FileEntry[] } }
@@ -36,6 +44,7 @@ export type FileManagerContract = PluginDefinition<
     copy: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     move: { req: { from: FileLocation, to: FileLocation, overwrite?: boolean }, res: Record<string, never> }
     delete: { req: { location: FileLocation, recursive?: boolean }, res: Record<string, never> }
+    pick: { req: { kind: 'file' | 'files', extensions?: string[], title?: string }, res: { items: PickedFile[] } }
     grant: { req: { kind: 'file' | 'files' | 'directory' }, res: { grants: FileGrant[] } }
     grants: { req: Record<string, never>, res: { grants: FileGrant[] } }
     revoke: { req: { id: string }, res: Record<string, never> }
@@ -57,7 +66,7 @@ declare module '@aqutter/aqutter' {
 
 /**
  * 網頁端 API。**plugin 在這個平台用不了時不拋錯**（`callPlugin` 回 `undefined`），各方法回安全的預設值：
- * `list`／`grant`／`grants` 回 `[]`、`stat` 回 `{ exists: false }`、`read` 回空內容且 `eof`、`write` 回 0、
+ * `list`／`pick`／`grant`／`grants` 回 `[]`、`stat` 回 `{ exists: false }`、`read` 回空內容且 `eof`、`write` 回 0、
  * `saveToDownloads` 回 `cancelled`，其餘不做事。要事先判斷用 `isPluginSupported('file-manager', <方法>)`。
  *
  * 失敗時 `callPlugin` 拋出 `AqutterPluginError`，其 `code` 是契約的錯誤碼
@@ -85,6 +94,14 @@ export const fileManager = {
   delete: async (location: FileLocation, options: { recursive?: boolean } = {}): Promise<void> => {
     await callPlugin('file-manager', 'delete', { location, ...options })
   },
+  /**
+   * 開啟系統的選擇器，讓使用者**一次性**挑選檔案：`file` 選一個、`files` 選多個，可用 `extensions`（不含點，如 `['pdf']`）過濾。
+   * 取消回空陣列。回傳的 `location` 是 `picked:<編號>`，只能讀（`stat`、`read`、`copy` 的來源、`saveToDownloads` 的 `from`），
+   * 不會進授權清單，App 重啟後失效；要長期使用請 `copy` 到 `app-documents:` 等位置，或改用 {@link fileManager.grant}。
+   * Android 選到的是複製進 App 快取的檔案，其他平台是原檔。
+   */
+  pick: async (kind: 'file' | 'files', options: { extensions?: string[], title?: string } = {}): Promise<PickedFile[]> =>
+    (await callPlugin('file-manager', 'pick', { kind, ...options }))?.items ?? [],
   /**
    * 開啟系統的選擇器，讓使用者授權檔案或資料夾；`files` 為一次選多個檔案（每個檔案各一個授權）。
    * 取消回空陣列。授權會持久保存；資料夾授權用 `granted:<id>/子/路徑`，單一檔案授權用 `granted:<id>`（沒有子路徑）。

@@ -9,6 +9,9 @@
     "features": {
       "sandbox": {},
       "granted": {},
+      "pick": {
+        "note": "macOS 沙盒 App 需要 entitlement com.apple.security.files.user-selected.read-only 才能讀取使用者選的檔案"
+      },
       "gallery": {
         "android": {
           "permissions": [

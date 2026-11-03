@@ -6,6 +6,7 @@ import 'package:aqutter_plugin_file_manager/aqutter_plugin_file_manager.dart';
 import 'package:aqutter_plugin_file_manager/src/grants.dart';
 import 'package:aqutter_plugin_file_manager/src/location.dart';
 import 'package:aqutter_plugin_file_manager/src/media_saver.dart';
+import 'package:aqutter_plugin_file_manager/src/picked_registry.dart';
 import 'package:flutter/foundation.dart' show TargetPlatform;
 import 'package:flutter_test/flutter_test.dart';
 
@@ -45,6 +46,21 @@ class _FakePicker implements GrantPicker {
   Future<List<PickedItem>> pick(String kind) async => next;
 }
 
+class _FakeChooser implements FileChooser {
+  List<ChosenFile> next = [];
+  bool? lastMultiple;
+  List<String>? lastExtensions;
+  String? lastTitle;
+
+  @override
+  Future<List<ChosenFile>> choose({required bool multiple, List<String>? extensions, String? title}) async {
+    lastMultiple = multiple;
+    lastExtensions = extensions;
+    lastTitle = title;
+    return next;
+  }
+}
+
 class _FakeDialog implements FileSaveDialog {
   _FakeDialog({this.cancel = false});
 
@@ -74,6 +90,18 @@ void main() {
 
     test('a bare root is the root itself', () {
       expect(parseLocation('app-cache:').isRoot, isTrue);
+    });
+
+    test('a picked location carries the pick id and has no sub path', () {
+      final location = parseLocation('picked:abc-1');
+      expect(location.pickedId, 'abc-1');
+      expect(location.segments, isEmpty);
+      expect(location.toString(), 'picked:abc-1');
+    });
+
+    test('a picked location rejects a sub path or a bad id', () {
+      expect(() => parseLocation('picked:abc/x.txt'), throwsA(isA<FileManagerException>()));
+      expect(() => parseLocation('picked:'), throwsA(isA<FileManagerException>()));
     });
 
     test('a granted location carries the grant id', () {
@@ -600,6 +628,190 @@ void main() {
 
       expect(result, {'status': 'saved'});
       expect(String.fromCharCodes(dialog.saved.single.$1), 'pdf');
+    });
+  });
+
+  group('pick (one-shot selection)', () {
+    late Directory temp;
+    late Directory outside;
+    late _FakeChooser chooser;
+    late FileManagerPlugin plugin;
+
+    Future<dynamic> call(String method, Map<String, dynamic> payload) => plugin.handlers[method]!(payload);
+
+    void expectError(dynamic result, String code) {
+      final error = aqutterErrorOf(result);
+      expect(error, isNotNull, reason: 'expected $code, got $result');
+      expect(error!.code, code);
+    }
+
+    Future<String> pickOne(String name, String content) async {
+      final file = File('${outside.path}/$name')..writeAsStringSync(content);
+      chooser.next = [ChosenFile(name: name, path: file.path)];
+      final result = await call('pick', {'kind': 'file'}) as Map;
+      return ((result['items'] as List).single as Map)['location'] as String;
+    }
+
+    setUp(() {
+      temp = Directory.systemTemp.createTempSync('file-manager-pick');
+      outside = Directory('${temp.path}/outside')..createSync();
+      chooser = _FakeChooser();
+      plugin = FileManagerPlugin(
+        chooser: chooser,
+        grants: GrantManager(store: _MemoryGrantStore(), picker: _FakePicker([]), platform: TargetPlatform.windows),
+        rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
+      );
+    });
+
+    tearDown(() => temp.deleteSync(recursive: true));
+
+    test('returns a location, the name and the size; never the real path', () async {
+      final file = File('${outside.path}/a.txt')..writeAsStringSync('hello');
+      chooser.next = [ChosenFile(name: 'a.txt', path: file.path)];
+
+      final result = await call('pick', {'kind': 'file'}) as Map;
+      final item = (result['items'] as List).single as Map;
+
+      expect(item.keys, unorderedEquals(['location', 'name', 'size']));
+      expect(item['name'], 'a.txt');
+      expect(item['size'], 5);
+      expect(item['location'], startsWith('picked:'));
+      expect(item.values.join(), isNot(contains(outside.path)));
+      expect(chooser.lastMultiple, isFalse);
+    });
+
+    test('files allows several and passes the filter and title on', () async {
+      final a = File('${outside.path}/a.pdf')..writeAsStringSync('a');
+      final b = File('${outside.path}/b.pdf')..writeAsStringSync('b');
+      chooser.next = [ChosenFile(name: 'a.pdf', path: a.path), ChosenFile(name: 'b.pdf', path: b.path)];
+
+      final result = await call('pick', {'kind': 'files', 'extensions': ['PDF'], 'title': 'Pick reports'}) as Map;
+
+      expect(result['items'], hasLength(2));
+      expect(chooser.lastMultiple, isTrue);
+      expect(chooser.lastExtensions, ['pdf']);
+      expect(chooser.lastTitle, 'Pick reports');
+    });
+
+    test('a cancelled picker returns no items', () async {
+      chooser.next = [];
+
+      expect(await call('pick', {'kind': 'file'}), {'items': []});
+    });
+
+    test('an empty extensions list means no filter', () async {
+      await call('pick', {'kind': 'file', 'extensions': []});
+
+      expect(chooser.lastExtensions, isNull);
+    });
+
+    test('rejects bad arguments with invalid_argument', () async {
+      expectError(await call('pick', {'kind': 'directory'}), errInvalidArgument);
+      expectError(await call('pick', {}), errInvalidArgument);
+      expectError(await call('pick', {'kind': 'file', 'extensions': 'pdf'}), errInvalidArgument);
+      expectError(await call('pick', {'kind': 'file', 'extensions': [1]}), errInvalidArgument);
+      expectError(await call('pick', {'kind': 'file', 'title': 3}), errInvalidArgument);
+    });
+
+    test('picking the same file twice reuses the location and it does not appear in grants', () async {
+      final first = await pickOne('a.txt', 'x');
+      final second = await pickOne('a.txt', 'x');
+
+      expect(second, first);
+      expect((await call('grants', {}) as Map)['grants'], isEmpty);
+    });
+
+    test('stat and read work on a picked file', () async {
+      final location = await pickOne('a.txt', 'hello');
+
+      expect((await call('stat', {'location': location}) as Map)['exists'], isTrue);
+      expect(String.fromCharCodes((await call('read', {'location': location}) as Map)['data'] as Uint8List), 'hello');
+    });
+
+    test('everything except reading is refused', () async {
+      final location = await pickOne('a.txt', 'hello');
+
+      expectError(await call('write', {'location': location, 'data': _bytes('x'), 'mode': 'overwrite'}), errPermissionDenied);
+      expectError(await call('delete', {'location': location}), errPermissionDenied);
+      expectError(await call('makeDirectory', {'location': location}), errPermissionDenied);
+      expectError(await call('move', {'from': location, 'to': 'app-documents:a.txt'}), errPermissionDenied);
+      expectError(await call('move', {'from': 'app-documents:a.txt', 'to': location}), errPermissionDenied);
+      expectError(await call('copy', {'from': 'app-documents:a.txt', 'to': location}), errPermissionDenied);
+      expect(File('${outside.path}/a.txt').readAsStringSync(), 'hello');
+    });
+
+    test('copy takes a picked file into a sandbox root', () async {
+      final location = await pickOne('a.txt', 'hello');
+
+      expect(await call('copy', {'from': location, 'to': 'app-documents:copy.txt'}), isEmpty);
+      expect(File('${temp.path}/app-documents/copy.txt').readAsStringSync(), 'hello');
+    });
+
+    test('copy keeps an existing destination unless overwrite is set', () async {
+      final location = await pickOne('a.txt', 'new');
+      Directory('${temp.path}/app-documents').createSync(recursive: true);
+      File('${temp.path}/app-documents/copy.txt').writeAsStringSync('old');
+
+      expectError(await call('copy', {'from': location, 'to': 'app-documents:copy.txt'}), errAlreadyExists);
+      expect(File('${temp.path}/app-documents/copy.txt').readAsStringSync(), 'old');
+
+      await call('copy', {'from': location, 'to': 'app-documents:copy.txt', 'overwrite': true});
+      expect(File('${temp.path}/app-documents/copy.txt').readAsStringSync(), 'new');
+    });
+
+    test('copy streams a file larger than one chunk', () async {
+      final big = File('${outside.path}/big.bin')..writeAsBytesSync(Uint8List(maxContentBytes + 10));
+      chooser.next = [ChosenFile(name: 'big.bin', path: big.path)];
+      final location = (((await call('pick', {'kind': 'file'}) as Map)['items'] as List).single as Map)['location'] as String;
+
+      await call('copy', {'from': location, 'to': 'app-documents:big.bin'});
+
+      expect(File('${temp.path}/app-documents/big.bin').lengthSync(), maxContentBytes + 10);
+    });
+
+    test('an unknown id or a removed file is not_found', () async {
+      expectError(await call('read', {'location': 'picked:nosuchid'}), errNotFound);
+
+      final location = await pickOne('gone.txt', 'x');
+      File('${outside.path}/gone.txt').deleteSync();
+
+      expectError(await call('read', {'location': location}), errNotFound);
+    });
+
+    test('a new plugin instance does not know an earlier pick', () async {
+      final location = await pickOne('a.txt', 'x');
+      final fresh = FileManagerPlugin(
+        grants: GrantManager(store: _MemoryGrantStore(), picker: _FakePicker([]), platform: TargetPlatform.windows),
+        rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
+      );
+
+      expectError(await fresh.handlers['read']!({'location': location}), errNotFound);
+    });
+
+    test('saveToDownloads can export a picked file', () async {
+      final dialog = _FakeDialog();
+      final withDialog = FileManagerPlugin(
+        chooser: chooser,
+        saveDialog: dialog,
+        grants: GrantManager(store: _MemoryGrantStore(), picker: _FakePicker([]), platform: TargetPlatform.windows),
+        rootResolver: (root) async => Directory('${temp.path}/$root')..createSync(recursive: true),
+      );
+      final file = File('${outside.path}/r.pdf')..writeAsStringSync('pdf');
+      chooser.next = [ChosenFile(name: 'r.pdf', path: file.path)];
+      final picked = await withDialog.handlers['pick']!({'kind': 'file'}) as Map;
+      final location = ((picked['items'] as List).single as Map)['location'] as String;
+
+      final result = await withDialog.handlers['saveToDownloads']!({'from': location, 'name': 'r.pdf', 'mimeType': 'application/pdf'});
+
+      expect(result, {'status': 'saved'});
+      expect(String.fromCharCodes(dialog.saved.single.$1), 'pdf');
+    });
+
+    test('pick is offered on every platform with a system file chooser', () {
+      expect(
+        plugin.supportedPlatformsFor('pick'),
+        {TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.windows, TargetPlatform.macOS, TargetPlatform.linux},
+      );
     });
   });
 }

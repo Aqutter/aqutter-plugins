@@ -18,6 +18,7 @@ describe('fileManager when the plugin cannot run here', () => {
     expect(read.eof).toBe(true)
     expect(await fileManager.grants()).toEqual([])
     expect(await fileManager.grant('directory')).toEqual([])
+    expect(await fileManager.pick('file', { extensions: ['pdf'] })).toEqual([])
   })
 
   it('writes do nothing and report nothing was saved', async () => {
