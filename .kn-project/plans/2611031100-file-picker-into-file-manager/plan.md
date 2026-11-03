@@ -95,6 +95,8 @@
 ## Key Decisions
 - **[Q1]** 新增一次性 `pick`，`grant` 不變 — 理由：`grant` 在 Android 只支援資料夾（`aqutter-plugins/packages/file-manager/lib/src/grants.dart` SafGrantPicker 對非 directory 拋不支援），且會持久保存授權；一次性選檔不該進授權清單。使用者 2026-11-03 選擇此方案。
 - **[Q2]** 本輪不動殼 — 理由：移除 `picker_pick` 是對所有現有 App 的破壞性變更，先棄用、下一版再移除。
+- **[執行中]** 位置字串只認 `picked:<編號>`、不含子路徑；複製以分段讀寫完成（目的端可能是 SAF）— 理由：不需改契約即可滿足 §4
+- **[驗證]** Dart 79 個與網頁端測試通過；Windows 實機經 nuxt-app 驗證選取、讀取、取消；Android 未驗證
 
 ## References
 - 無
