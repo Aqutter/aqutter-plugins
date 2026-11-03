@@ -92,6 +92,32 @@ importers:
         specifier: ^5.7.0
         version: 5.9.3
 
+  packages/nearby-demo:
+    dependencies:
+      aqutter-plugin-location:
+        specifier: github:Aqutter/aqutter-plugins#path:/packages/location
+        version: https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/location(@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db)
+    devDependencies:
+      '@aqutter/aqutter':
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/place-demo:
+    dependencies:
+      aqutter-plugin-nearby-demo:
+        specifier: github:Aqutter/aqutter-plugins#path:/packages/nearby-demo
+        version: https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/nearby-demo(@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db)
+    devDependencies:
+      '@aqutter/aqutter':
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
   packages/secure-storage:
     devDependencies:
       '@aqutter/aqutter':
@@ -474,6 +500,24 @@ packages:
 
   '@vitest/utils@3.2.7':
     resolution: {integrity: sha512-x6BDOd7dyo3PFLY3I9/HJ25X/6OurhGXk2/B9gOZNPF7XDVjeBK4k01lQE5uvDpbuheErh91qYuE1E2OEjK3Rw==}
+
+  aqutter-plugin-location@https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/location:
+    resolution: {gitHosted: true, path: /packages/location, tarball: https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842}
+    version: 0.0.0
+    peerDependencies:
+      '@aqutter/aqutter': '*'
+    peerDependenciesMeta:
+      '@aqutter/aqutter':
+        optional: true
+
+  aqutter-plugin-nearby-demo@https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/nearby-demo:
+    resolution: {gitHosted: true, path: /packages/nearby-demo, tarball: https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842}
+    version: 0.0.0
+    peerDependencies:
+      '@aqutter/aqutter': '*'
+    peerDependenciesMeta:
+      '@aqutter/aqutter':
+        optional: true
 
   assertion-error@2.0.1:
     resolution: {integrity: sha512-Izi8RQcffqCeNVgFigKli1ssklIbpHnCYc6AknXGYoB6grJqyeby7jv12JUQgmTAnIDnbck1uxksT4dzN3PWBA==}
@@ -927,6 +971,16 @@ snapshots:
       '@vitest/pretty-format': 3.2.7
       loupe: 3.2.1
       tinyrainbow: 2.0.0
+
+  aqutter-plugin-location@https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/location(@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db):
+    optionalDependencies:
+      '@aqutter/aqutter': https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
+
+  aqutter-plugin-nearby-demo@https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/nearby-demo(@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db):
+    dependencies:
+      aqutter-plugin-location: https://codeload.github.com/Aqutter/aqutter-plugins/tar.gz/6605f8424066203cb084c80c4a419631c72fc842#path:/packages/location(@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db)
+    optionalDependencies:
+      '@aqutter/aqutter': https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
 
   assertion-error@2.0.1: {}
 

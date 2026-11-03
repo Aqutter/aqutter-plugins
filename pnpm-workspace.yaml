@@ -3,3 +3,6 @@ packages:
 
 allowBuilds:
   esbuild: true
+
+# nearby-demo 與 place-demo 以 GitHub 子資料夾來源相依其他 plugin；pnpm 11 預設禁止間接依賴來自 git
+blockExoticSubdeps: false
