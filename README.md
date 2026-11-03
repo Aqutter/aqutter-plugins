@@ -11,6 +11,8 @@ Aqutter 官方 plugin 的 monorepo。每個 plugin 同時是 npm 套件（網頁
 | haptics | `packages/haptics` | `haptics` | 觸覺回饋 |
 | location | `packages/location` | `location` | 取得位置一次與持續監聽（前景），預設高精度 |
 | mirror-demo | `packages/mirror-demo` | `mirror-demo` | 原生 view 鏡像的示範 |
+| nearby-demo | `packages/nearby-demo` | `nearby-demo` | 示範用的內部中間層（`internal`）：經 `callPlugin` 呼叫 location，網頁不能直接使用 |
+| place-demo | `packages/place-demo` | `place-demo` | 示範三層呼叫鏈的頂層：網頁 → place-demo → nearby-demo → location |
 | secure-storage | `packages/secure-storage` | `secure-storage` | 安全儲存，可要求生物辨識或裝置密碼才能讀出 |
 | sqlite-drift | `packages/sqlite-drift` | `sqlite` | SQLite（drift），網頁端是 Kysely dialect |
 

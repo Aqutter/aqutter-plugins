@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "place-demo",
+  "dart": {
+    "package": "aqutter_plugin_place_demo",
+    "class": "PlaceDemoPlugin"
+  },
+  "requires": {
+    "aqutter-plugin-nearby-demo": "^0.0.0"
+  }
+}

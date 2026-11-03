@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "nearby-demo",
+  "dart": {
+    "package": "aqutter_plugin_nearby_demo",
+    "class": "NearbyDemoPlugin"
+  },
+  "requires": {
+    "aqutter-plugin-location": "^0.0.0"
+  }
+}
