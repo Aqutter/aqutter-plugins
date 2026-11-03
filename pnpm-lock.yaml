@@ -11,8 +11,8 @@ importers:
   packages/battery:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -23,8 +23,8 @@ importers:
   packages/biometrics:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -35,8 +35,8 @@ importers:
   packages/file-manager:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -47,8 +47,8 @@ importers:
   packages/google-maps:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       '@types/google.maps':
         specifier: ^3.66.7
         version: 3.66.9
@@ -65,8 +65,8 @@ importers:
   packages/haptics:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -74,8 +74,8 @@ importers:
   packages/location:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -86,8 +86,8 @@ importers:
   packages/mirror-demo:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -95,8 +95,8 @@ importers:
   packages/secure-storage:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       typescript:
         specifier: ^5.7.0
         version: 5.9.3
@@ -107,8 +107,8 @@ importers:
   packages/sqlite-drift:
     devDependencies:
       '@aqutter/aqutter':
-        specifier: github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663
-        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663
+        specifier: github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db
+        version: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db
       kysely:
         specifier: ^0.29.4
         version: 0.29.8
@@ -121,8 +121,8 @@ importers:
 
 packages:
 
-  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663':
-    resolution: {gitHosted: true, integrity: sha512-sEMRN2TDTMOQLR3RDcWTYnSIcVutC6BeyvAZcWr4eIrlfcUYzcA2Dug0Nwr5RuOrgK+ASfMqOSBuYX4Ey+aXug==, tarball: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663}
+  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db':
+    resolution: {gitHosted: true, integrity: sha512-7z9QCLu9Fn/SXKHlwjsF7B8euLKQtZdUefnSla3p57BZkslvUobIsnOwNqflmDEbzyMV906887Tr/xLdcs44xg==, tarball: https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db}
     version: 0.0.0
 
   '@esbuild/aix-ppc64@0.28.2':
@@ -712,7 +712,7 @@ packages:
 
 snapshots:
 
-  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/5cfb3fe82ba46a37117454ee132863faf4990663': {}
+  '@aqutter/aqutter@https://codeload.github.com/Aqutter/aqutter-js/tar.gz/bc84de7498fadd4263c1a2cf11a1af64fa8063db': {}
 
   '@esbuild/aix-ppc64@0.28.2':
     optional: true

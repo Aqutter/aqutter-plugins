@@ -28,7 +28,7 @@
     }
   },
   "devDependencies": {
-    "@aqutter/aqutter": "github:Aqutter/aqutter-js#5cfb3fe82ba46a37117454ee132863faf4990663",
+    "@aqutter/aqutter": "github:Aqutter/aqutter-js#bc84de7498fadd4263c1a2cf11a1af64fa8063db",
     "kysely": "^0.29.4",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
