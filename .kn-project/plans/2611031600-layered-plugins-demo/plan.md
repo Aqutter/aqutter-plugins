@@ -4,7 +4,7 @@
 - Issue: N/A（無 issue 追蹤基準）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: In Progress
+- Status: Awaiting Archive
 - Completed: [Wait for Finish]
 
 ## Goals
