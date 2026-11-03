@@ -5,7 +5,7 @@
 - Issue: N/A（本專案開發階段不建 issue）
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: In Progress
+- Status: Awaiting Archive
 - Completed: [Wait for Finish]
 
 ## Goals
