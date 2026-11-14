@@ -146,6 +146,29 @@ override func application(
 ios/Flutter/Secrets.xcconfig
 ```
 
+### iOS：選擇地圖實作（Swift Package Manager）
+
+Aqutter 框架的最低 iOS 是 **16.0**。`google_maps_flutter` 預設的 iOS 實作 `google_maps_flutter_ios` 不支援 Swift Package Manager，Flutter 3.50 建置 iOS 時會警告「plugin 不支援 Swift Package Manager」。官方建議改用 SDK 專用的實作，由**應用程式**在自己的 `pubspec.yaml` 選擇（本 plugin 不依賴它，讓你能依最低 iOS 版本自己決定）：
+
+```yaml
+dependencies:
+  google_maps_flutter_ios_sdk10: ^2.19.0
+```
+
+| 實作套件 | Google Maps SDK | 最低 iOS |
+|---|---|---|
+| `google_maps_flutter_ios_sdk10`（建議，框架最低 iOS 16 即適用） | 10.x | 16.0 |
+| `google_maps_flutter_ios_sdk9` | 9.2–9.x | 15.0 |
+
+加入後它會自動取代預設實作，其餘照常使用 `google_maps_flutter`；`AppDelegate.swift` 的 `import GoogleMaps` 與 `GMSServices.provideAPIKey(...)` 不需修改。
+
+從預設實作換過來時，若本機留有舊的 CocoaPods 建置產物，建置會出現 `duplicate symbols`（例如 `GoogleMapsUtils` 重複）。先清掉再建置：
+
+```bash
+flutter clean
+rm -rf ios/Pods ios/Podfile.lock
+```
+
 ## 運作方式與限制
 
 - 擷取：Flutter 的 `RepaintBoundary.toImage` 抓不到地圖（鏡像會是透明的）。Android 直接擷取地圖內的 `TextureView`；iOS 用原生 `drawHierarchy` 擷取地圖 view。Android 地圖用 texture 模式（`useAndroidViewSurface = false`），本 plugin 會自動設定。
