@@ -4,12 +4,12 @@ publish_to: 'none'
 version: 0.0.0
 
 environment:
-  sdk: '>=3.13.7 <4.0.0'
-  # 3.47.8 is the reference Flutter version the framework is built and tested on.
+  sdk: '>=3.14.0 <4.0.0'
+  # 3.50.0 is the reference Flutter version the framework is built and tested on.
   # There is deliberately no upper bound: newer Flutter versions can be tried, and `aqutter doctor`
   # warns when the installed Flutter is newer than the reference.
   # `aqutter upgrade` keeps this line in sync with the installed CLI.
-  flutter: '>=3.47.8'
+  flutter: '>=3.50.0'
 
 dependencies:
   flutter:
