@@ -8,6 +8,22 @@ AqutterNativeMessage _message(String type, [Map<String, dynamic> data = const {}
 void main() {
   const size = (width: 400.0, height: 200.0);
 
+  group('mode', () {
+    test('defaults to auto and keeps whatever the app asks for on a full-screen map', () {
+      expect(GoogleMapsPlugin().mode, AqutterNativeMode.auto);
+      for (final mode in AqutterNativeMode.values) {
+        expect(GoogleMapsPlugin.underlayMode(mode, widthFactor: 1.0, heightFactor: 1.0), mode);
+      }
+    });
+
+    test('a map that covers only part of the screen is always mirrored', () {
+      for (final mode in AqutterNativeMode.values) {
+        expect(GoogleMapsPlugin.underlayMode(mode, widthFactor: 0.5, heightFactor: 1.0), AqutterNativeMode.mirror);
+        expect(GoogleMapsPlugin.underlayMode(mode, widthFactor: 1.0, heightFactor: 0.5), AqutterNativeMode.mirror);
+      }
+    });
+  });
+
   group('gesture mapper', () {
     List<Object> json(AqutterMapDelta delta) => delta.toUpdates().map((update) => update.toJson()).toList();
 

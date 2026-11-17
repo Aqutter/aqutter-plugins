@@ -7,7 +7,7 @@ Aqutter 官方 plugin 的 monorepo。每個 plugin 同時是 npm 套件（網頁
 | battery | `packages/battery` | `battery` | 電量與充電狀態 |
 | biometrics | `packages/biometrics` | `biometrics` | 叫起系統的驗證視窗（生物辨識或裝置密碼），任何時候都能呼叫 |
 | file-manager | `packages/file-manager` | `file-manager` | App 資料夾、使用者授權的位置、相簿與下載的檔案管理 |
-| google-maps | `packages/google-maps` | `google-maps` | 地圖鏡像到網頁，可在地圖上疊 HTML |
+| google-maps | `packages/google-maps` | `google-maps` | 地圖鏡像或穿透到網頁（`mode` 選項），可在地圖上疊 HTML |
 | haptics | `packages/haptics` | `haptics` | 觸覺回饋 |
 | location | `packages/location` | `location` | 取得位置一次與持續監聽（前景），預設高精度 |
 | mirror-demo | `packages/mirror-demo` | `mirror-demo` | 原生 view 鏡像的示範 |

@@ -40,6 +40,7 @@ class GoogleMapsPlugin extends AqutterPlugin {
     this.maxFps,
     this.minScale,
     this.mapType = MapType.normal,
+    this.mode = AqutterNativeMode.auto,
   });
 
   /// 外掛 id，也是網頁 `<aqutter-native session="…">` 的 session。同一頁要放多個地圖時，各給一個不同的 id
@@ -66,6 +67,22 @@ class GoogleMapsPlugin extends AqutterPlugin {
   final double? minScale;
 
   final MapType mapType;
+
+  /// 這個地圖允許的顯示模式（預設 [AqutterNativeMode.auto]），傳給 [AqutterNative.mode]：
+  ///
+  /// - [AqutterNativeMode.mirror]：絕不穿透，一律擷取並鏡像到網頁（原本的行為）。
+  /// - [AqutterNativeMode.auto]、[AqutterNativeMode.passthrough]：允許穿透——地圖直接畫在（透明的）WebView 下面，
+  ///   不擷取、不送幀。實際用哪一種由網頁 `<aqutter-native>` 的 `mode` 屬性（`googleMaps.mount` 的 `mode` 選項）、
+  ///   平台（目前只有 Android）與頁面條件決定，見 README。
+  ///
+  /// [widthFactor]、[heightFactor] 不是 1（地圖只占畫面的一部分）時一律鏡像：穿透時地圖的大小與位置跟著網頁元素，
+  /// 不是 App 端指定的比例。
+  final AqutterNativeMode mode;
+
+  /// 實際傳給 [AqutterNative.mode] 的值：只占畫面一部分的地圖不能穿透，見 [mode]。
+  @visibleForTesting
+  static AqutterNativeMode underlayMode(AqutterNativeMode mode, {required double widthFactor, required double heightFactor}) =>
+      widthFactor == 1.0 && heightFactor == 1.0 ? mode : AqutterNativeMode.mirror;
 
   AqutterPluginContext? _context;
   /// 最近一次 `onMapCreated` 給的控制器。`GoogleMap` widget 被銷毀再重建時會得到新的控制器，舊的一旦銷毀就不能再用
@@ -169,6 +186,7 @@ class GoogleMapsPlugin extends AqutterPlugin {
         heightFactor: heightFactor,
         child: AqutterNative(
         sessionId: pluginId,
+        mode: underlayMode(mode, widthFactor: widthFactor, heightFactor: heightFactor),
         quality: quality,
         maxFps: maxFps,
         minScale: _minScaleOverride ?? minScale,

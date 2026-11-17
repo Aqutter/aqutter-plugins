@@ -22,6 +22,12 @@ export interface GoogleMapsMountOptions {
   /** 初始相機；省略時由地圖自己決定。 */
   camera?: { lat: number, lng: number, zoom?: number }
   mapType?: GoogleMapsType
+  /**
+   * 原生地圖的顯示模式，設到 `<aqutter-native>` 的 `mode` 屬性（只有 `'native'` provider 用）：
+   * `'auto'`（預設）平台支援且頁面可穿透時用穿透，否則鏡像；`'mirror'` 一律鏡像；`'passthrough'` 要求穿透
+   * （不偵測頁面條件：元素後方的祖先不可有不透明背景）。省略時不設屬性，由元素的預設（`auto`）決定。
+   */
+  mode?: 'auto' | 'mirror' | 'passthrough'
 }
 
 export interface GoogleMapsMoveOptions {
