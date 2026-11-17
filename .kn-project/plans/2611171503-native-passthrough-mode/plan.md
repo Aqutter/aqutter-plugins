@@ -29,7 +29,7 @@ google-maps（以及使用 `<aqutter-native>` 的 plugin）沿用 core 的穿透
 - **合併後的連動**: 各 repo 合併後，`aqutter` 的 `manifest/releases.json`（`core.ref`、`shell.ref`、`client.spec`）與 `aqutter-cli` 的 manifest 快照需重新同步，0.0.0 tag 需移動，見各份 `## Manual Follow-ups`。
 
 ## Contract / 介面契約
-- **契約正本 repo**: `aqutter_core`　**修訂號**: `rev 1`　**狀態**: `凍結（核准日 2026-11-17）`
+- **契約正本 repo**: `aqutter_core`　**修訂號**: `rev 2`　**狀態**: `凍結（核准日 2026-11-17；rev 2 核准日 2026-11-17）`
 
 目標：`<aqutter-native>` 除了現有的鏡像（`mirror`），新增穿透（`passthrough`）：原生內容直接畫在透明 WebView 下面，標籤只佔版面、不畫 canvas；兩種模式共用同一個標籤、同一組手勢與事件，用 `mode` 屬性切換。
 
@@ -99,7 +99,7 @@ google-maps（以及使用 `<aqutter-native>` 的 plugin）沿用 core 的穿透
 - **模式在工作階段開始時決定一次**，執行期改變一律走重新連線；原生端的 child 在重新連線期間保持掛載，不重建（穿透 ↔ 鏡像的切換只是「開始／停止擷取」與「child 是否被定位」）。
 - **鏡像**：行為與現在完全相同。
 - **穿透**：不擷取、不送幀（`ack` 忽略）；元素的 shadow DOM 不建立 `<canvas>`，`fit`、`max-in-flight` 屬性忽略；`input`、`double-tap*`、`slop`、`long-press-ms` 屬性照常生效，手勢辨識沿用現有 `GestureRecognizer`；host 的 `touch-action: none` 維持。
-- **原生端的版面**：`AqutterNative` 的盒子原點必須等於 WebView 視窗原點（例如殼的底層 `Stack` 中的 `Positioned.fill`）；穿透時依 `layout` 把 child 以緊約束（`width × height`）放在 (`left`, `top`)。第一則 `visible: true` 的 `layout` 到達前不建立 child；`visible: false` 時 child 保持掛載但不繪製（`Offstage`）。
+- **原生端的版面**：`AqutterNative` 的盒子原點必須等於 WebView 視窗原點（例如殼的底層 `Stack` 中的 `Positioned.fill`）；穿透時依 `layout` 把 child 以緊約束（`width × height`）放在 (`left`, `top`)。**child 從 widget 第一次建立起就保持掛載**：工作階段開始時尚未協商出模式，一律先當鏡像，child 照常建立；協商成穿透後，第一則 `visible: true` 的 `layout` 到達前、以及 `visible: false` 時，child 仍保持掛載但不繪製（`Offstage`），不重建、不遺失狀態。
 - **手勢座標**：相對元素盒子的 0..1，與鏡像相同，所以 plugin 的手勢處理（例如地圖的 pan／pinch）不需修改。
 - **WebView 透明**：殼監聽 `passthroughSessions`，大於 0 時把 WebView 設為透明、回到 0 時還原不透明；只有穿透中才透明。多個穿透工作階段的上下順序依殼底層 `Stack` 的 plugin 順序，不屬契約。
 - **頁面責任**：穿透時元素後方的祖先不得畫不透明背景；`auto` 以 `pageReady` 偵測（工作階段開始與 `mode` 屬性改變時各一次），`passthrough` 不偵測。
@@ -113,7 +113,7 @@ google-maps（以及使用 `<aqutter-native>` 的 plugin）沿用 core 的穿透
 - 既有 plugin 的網頁 API 與事件不變；`googleMaps.element()` 在兩種模式都回標籤。
 
 ### 6. 變更紀錄
-- _(尚無)_
+- **rev 2（2026-11-17，已核准）**：§4「原生端的版面」——child 一律保持掛載，穿透時在第一則可見的 `layout` 之前用 `Offstage` 隱藏，取代 rev 1 的「第一則 `visible: true` 的 `layout` 前不建立 child」。原因：rev 1 與「child 在模式切換期間保持掛載」自相矛盾；widget 在協商前先當鏡像建好 child，改成穿透時若拆掉重建，PlatformView（例如地圖）的狀態會遺失、並建立兩次（以 `initState` 計數的測試證實）。影響 repo：只有 `aqutter_core` 的實作；`aqutter-js`、`aqutter`、`aqutter-plugins` 的程式不受影響，只需同步契約文字。
 
 ## Impact Files
 - `packages/google-maps/lib/src/google_maps_plugin.dart:32` (`GoogleMapsPlugin` 建構子)、`:161` (`buildUnderlay`) — 新增 `mode`，傳給 `AqutterNative`。
@@ -151,6 +151,7 @@ google-maps（以及使用 `<aqutter-native>` 的 plugin）沿用 core 的穿透
 - **[前置實驗]** 透明的初始設定在 Android 不生效（兩段式才生效），列為 aqutter_core 要查根因的工作，不在殼繞過。
 - **[程式碼風格]** 實作遵守 `kn-project-code-style`。
 - **[契約]** rev 1 凍結（核准日 2026-11-17）。
+- **[契約變更]** rev 1 → rev 2（已核准）：child 一律保持掛載，穿透時第一則可見 layout 前以 `Offstage` 隱藏（契約 §4、§6）；只影響 aqutter_core 的實作，本 repo 只同步契約文字。
 - **[完成後]** commit + 開 PR（Rule 12 非互動鏈；完成前自動 fetch 後 rebase origin/main 並 push --force-with-lease --force-if-includes）。
 - **[執行模式]** 序列（依據：環境只有單一 agent，沒有獨立子 agent）；順序 aqutter_core → aqutter-js → aqutter → aqutter-plugins。
 - **[範圍]** 使用者指示「先定契約」：本次先把契約凍結、建立 issue 與分支並提交計畫，實作（`tasks.md` 的 Phase 1 起）等使用者確認後再開始。
