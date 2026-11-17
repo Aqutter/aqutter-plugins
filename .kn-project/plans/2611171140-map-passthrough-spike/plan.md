@@ -4,7 +4,7 @@
 - Issue: Aqutter/aqutter-plugins#7
 - Milestone: N/A（未指定）
 - Base Branch: main
-- Status: In Progress
+- Status: Awaiting Archive
 - Completed: [Wait for Finish]
 
 ## Goals
@@ -75,6 +75,9 @@
 - **[契約]** rev 1 凍結（核准日 2026-11-17）。
 - **[執行模式]** 序列（依據：plugin 的實測依賴殼的開關，且只有一支實機；先 aqutter 後 aqutter-plugins）。
 - **[完成後]** commit + push（實驗分支，不歸檔、不開 PR）；驗證完成後再與使用者決定去留。
+- **[結果]** 方案 2 在 ASUS（Android 13）通過：顯示、HTML 疊層、拖曳、縮放、點擊正常；掉幀 0% 對鏡像 28.9%。報告見 aqutter-plugins 的 `.kn-project/plans/2611171140-map-passthrough-spike/report.md`。
+- **[發現]** 殼的初始 `transparentBackground` 在 Android 沒生效，實驗改成建立後先 false 再 true 才透明；根因未查，列入報告的待處理。
+- **[歸檔]** 驗證報告暫放計畫資料夾（`report.md`），實驗分支不歸檔、不開 PR；去留由使用者決定。
 
 ## Git Completion Policy
 - PR 一律以 `--base main` 顯式指定 base（若最後要開 PR）。

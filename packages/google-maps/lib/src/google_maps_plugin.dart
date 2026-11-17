@@ -166,7 +166,8 @@ class GoogleMapsPlugin extends AqutterPlugin {
     _type.value = mapType;
     _camera = initialCamera;
     final platform = GoogleMapsFlutterPlatform.instance;
-    if (platform is GoogleMapsFlutterAndroid && !_passthrough) {
+    // 不鏡像模式實測也是在 texture 模式下通過的（Hybrid Composition 模式未驗證），所以兩種模式一律維持 texture
+    if (platform is GoogleMapsFlutterAndroid) {
       // texture 模式：地圖以 Texture 進 Flutter 的合成，RepaintBoundary 才擷取得到；
       // Hybrid Composition（AndroidViewSurface）的內容不在 Flutter 的圖層裡，擷取不到。
       platform.useAndroidViewSurface = false;
