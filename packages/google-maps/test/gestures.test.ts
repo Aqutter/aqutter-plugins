@@ -19,7 +19,7 @@ vi.mock('@aqutter/aqutter', () => ({
   onPluginEvent: () => () => {},
 }))
 
-const { forwardGestures } = await import('../src/nativeProvider')
+const { forwardGestures, trackLayout } = await import('../src/nativeProvider')
 const { googleMaps } = await import('../src/index')
 
 const pointer = (type: string, id: number, x: number, y: number, timeStamp = 0): PointerEvent => {
@@ -107,5 +107,42 @@ describe('googleMaps.mount in passthrough mode', () => {
     expect(document.querySelector('aqutter-native')).not.toBeNull()
     expect(bridge.calls.map(call => call.method)).not.toContain('show')
     view.destroy()
+  })
+})
+
+describe('trackLayout', () => {
+  const frame = (): Promise<void> => new Promise(resolve => requestAnimationFrame(() => resolve()))
+
+  it('reports the rect immediately and again after a scroll, once per frame', async () => {
+    bridge.calls = []
+    document.body.innerHTML = '<div id="hole"></div>'
+    const element = document.getElementById('hole') as HTMLElement
+    let top = 200
+    element.getBoundingClientRect = () => ({ left: 40, top, width: 320, height: 300, right: 360, bottom: top + 300, x: 40, y: top, toJSON: () => ({}) })
+    const stop = trackLayout(element)
+    const layouts = () => bridge.calls.filter(call => call.method === 'layout')
+    expect(layouts()).toHaveLength(1)
+    expect(layouts()[0]!.payload).toMatchObject({ left: 40, top: 200, width: 320, height: 300 })
+    expect(typeof layouts()[0]!.payload.sentAt).toBe('number')
+
+    top = 150
+    window.dispatchEvent(new Event('scroll'))
+    window.dispatchEvent(new Event('scroll'))
+    await frame()
+    expect(layouts()).toHaveLength(2)
+    expect(layouts()[1]!.payload).toMatchObject({ top: 150 })
+    stop()
+  })
+
+  it('stops reporting after cancel', async () => {
+    bridge.calls = []
+    document.body.innerHTML = '<div id="hole"></div>'
+    const element = document.getElementById('hole') as HTMLElement
+    const stop = trackLayout(element)
+    stop()
+    const before = bridge.calls.length
+    window.dispatchEvent(new Event('scroll'))
+    await frame()
+    expect(bridge.calls.length).toBe(before)
   })
 })

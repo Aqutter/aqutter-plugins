@@ -33,6 +33,8 @@ export type GoogleMapsContract = PluginDefinition<
     /** 實驗（不鏡像模式）：網頁開始／結束顯示地圖，plugin 據此建立／移除底層地圖。 */
     show: { req: void, res: { ok: boolean } }
     hide: { req: void, res: { ok: boolean } }
+    /** 實驗（不鏡像模式）：放地圖的容器（洞）的矩形，邏輯像素、相對螢幕左上角；`sentAt` 是送出時間（毫秒時間戳）。 */
+    layout: { req: { left: number, top: number, width: number, height: number, sentAt?: number }, res: { ok: boolean } }
     /** 實驗（不鏡像模式）：目前是否為不鏡像模式。 */
     mode: { req: void, res: { passthrough: boolean } }
     /** 實驗（不鏡像模式）：網頁送來的語意手勢，欄位同 Dart 端 `AqutterMapGestureMapper`。 */

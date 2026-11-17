@@ -8,6 +8,7 @@ import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
 import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 import 'gesture_mapper.dart';
+import 'hole_layout.dart';
 
 /// 以 `--dart-define=AQUTTER_MAP_BASELINE=true` 關掉主執行緒占用上限（預設 0.7），效能 A/B 比較用。
 const bool _baseline = bool.fromEnvironment('AQUTTER_MAP_BASELINE');
@@ -18,6 +19,9 @@ const bool _baseline = bool.fromEnvironment('AQUTTER_MAP_BASELINE');
 /// 直接畫在 Flutter 裡、墊在（需同時開 `AQUTTER_WEBVIEW_TRANSPARENT=true` 變透明的）WebView 之下；
 /// 觸控由網頁換成語意手勢，經 `gesture` handler 送來。預設關閉，行為不變。
 const bool _passthrough = bool.fromEnvironment('AQUTTER_MAP_PASSTHROUGH');
+
+/// 實驗：以 `--dart-define=AQUTTER_MAP_LAYOUT_LOG=true` 記錄 `layout` 從網頁送到這裡的延遲（每 60 筆印一次統計）。
+const bool _layoutLog = bool.fromEnvironment('AQUTTER_MAP_LAYOUT_LOG');
 
 final double? _minScaleOverride = double.tryParse(const String.fromEnvironment('AQUTTER_MAP_MINSCALE'));
 
@@ -84,6 +88,22 @@ class GoogleMapsPlugin extends AqutterPlugin {
   /// 每次 `show` 換一個新編號，連續 `hide`、`show`（例如切換版面）時才會真的重建地圖，而不是沿用舊的相機位置。
   final ValueNotifier<int> _session = ValueNotifier<int>(0);
   int _nextSession = 1;
+
+  /// 不鏡像模式：洞的基準矩形與底層地圖的平移量；`null` 表示網頁還沒回報。
+  final ValueNotifier<AqutterHoleLayout?> _hole = ValueNotifier<AqutterHoleLayout?>(null);
+  final List<int> _layoutLatencies = <int>[];
+
+  void _recordLayoutLatency(Object? sentAt) {
+    if (!_layoutLog || sentAt is! num) {
+      return;
+    }
+    _layoutLatencies.add(DateTime.now().millisecondsSinceEpoch - sentAt.toInt());
+    if (_layoutLatencies.length >= 60) {
+      final sorted = [..._layoutLatencies]..sort();
+      debugPrint('LAYOUT latency n=${sorted.length} median=${sorted[sorted.length ~/ 2]}ms p95=${sorted[(sorted.length * 0.95).floor()]}ms max=${sorted.last}ms');
+      _layoutLatencies.clear();
+    }
+  }
   CameraPosition _camera = const CameraPosition(target: LatLng(0, 0));
   AqutterMapSize _size = (width: 0, height: 0);
 
@@ -114,12 +134,14 @@ class GoogleMapsPlugin extends AqutterPlugin {
           }
           _camera = initialCamera;
           _mapController = null;
+          _hole.value = null;
           _session.value = _nextSession++;
           return {'ok': true};
         },
         'hide': (payload) async {
           _session.value = 0;
           _mapController = null;
+          _hole.value = null;
           return {'ok': _passthrough};
         },
         // 實驗：回報目前是否為不鏡像模式，網頁端據此決定要不要建立 `<aqutter-native>`
@@ -130,7 +152,26 @@ class GoogleMapsPlugin extends AqutterPlugin {
           if (!_passthrough || type is! String) {
             return {'ok': false};
           }
-          await _onMessage(AqutterNativeMessage(type, payload));
+          final hole = _hole.value;
+          final view = PlatformDispatcher.instance.views.first;
+          final mapGesture = hole == null
+              ? payload
+              : toMapGesture(payload, viewport: view.physicalSize / view.devicePixelRatio, mapRect: hole.mapRect);
+          await _onMessage(AqutterNativeMessage(type, mapGesture));
+          return {'ok': true};
+        },
+        // 實驗（不鏡像模式）：網頁回報放地圖的容器（洞）的矩形（邏輯像素、相對螢幕左上角）。
+        // 底層地圖與洞同大、同位置；洞隨頁面捲動時，底層地圖的位置跟著更新。
+        'layout': (payload) async {
+          final left = payload['left'];
+          final top = payload['top'];
+          final width = payload['width'];
+          final height = payload['height'];
+          if (!_passthrough || left is! num || top is! num || width is! num || height is! num || _session.value == 0) {
+            return {'ok': false};
+          }
+          _recordLayoutLatency(payload['sentAt']);
+          _hole.value = AqutterHoleLayout.update(_hole.value, Rect.fromLTWH(left.toDouble(), top.toDouble(), width.toDouble(), height.toDouble()));
           return {'ok': true};
         },
         'moveTo': (payload) async {
@@ -208,11 +249,21 @@ class GoogleMapsPlugin extends AqutterPlugin {
           builder: (context, session, _) => session > 0
               ? KeyedSubtree(
                   key: ValueKey<int>(session),
-                  child: FractionallySizedBox(
-                    alignment: alignment,
-                    widthFactor: widthFactor,
-                    heightFactor: heightFactor,
-                    child: _buildMap(),
+                  child: ValueListenableBuilder<AqutterHoleLayout?>(
+                    valueListenable: _hole,
+                    builder: (context, hole, _) {
+                      // 等洞的第一筆矩形到了才建立地圖；地圖與洞同大、跟著洞的位置走（只更新位置，不改大小）
+                      if (hole == null) {
+                        return const SizedBox.shrink();
+                      }
+                      final rect = hole.mapRect;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(left: rect.left, top: rect.top, width: rect.width, height: rect.height, child: _buildMap()),
+                        ],
+                      );
+                    },
                   ),
                 )
               : const SizedBox.shrink(),
@@ -348,5 +399,6 @@ class GoogleMapsPlugin extends AqutterPlugin {
     _markers.dispose();
     _type.dispose();
     _session.dispose();
+    _hole.dispose();
   }
 }

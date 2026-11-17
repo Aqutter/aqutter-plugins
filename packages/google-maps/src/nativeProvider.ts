@@ -141,6 +141,36 @@ export const forwardGestures = (element: HTMLElement): (() => void) => {
   }
 }
 
+/**
+ * 實驗（不鏡像模式）：追蹤放地圖的容器（洞）的位置與大小，回報給 plugin。
+ * 觸發：元素大小改變（ResizeObserver）、任何捲動容器捲動（捕獲階段的 scroll，不必知道哪個祖先在捲）、視窗大小改變。
+ * 每個畫面最多送一次，並附送出時間 `sentAt`（毫秒時間戳），讓 Dart 端量傳遞延遲。回傳取消追蹤的函式。
+ */
+export const trackLayout = (element: HTMLElement): (() => void) => {
+  let frame = 0
+  const send = (): void => {
+    frame = 0
+    const rect = element.getBoundingClientRect()
+    void callPlugin('google-maps', 'layout', { left: rect.left, top: rect.top, width: rect.width, height: rect.height, sentAt: Date.now() }).catch(() => {})
+  }
+  const schedule = (): void => {
+    if (frame === 0) {
+      frame = requestAnimationFrame(send)
+    }
+  }
+  const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule)
+  observer?.observe(element)
+  window.addEventListener('scroll', schedule, { capture: true, passive: true })
+  window.addEventListener('resize', schedule, { passive: true })
+  send()
+  return () => {
+    cancelAnimationFrame(frame)
+    observer?.disconnect()
+    window.removeEventListener('scroll', schedule, { capture: true })
+    window.removeEventListener('resize', schedule)
+  }
+}
+
 /** `'native'` provider：在 container 內建立 `<aqutter-native>`，鏡像原生地圖（iOS、Android）。 */
 export const createNativeView = async (
   container: HTMLElement,
@@ -153,8 +183,14 @@ export const createNativeView = async (
   if (passthrough) {
     element = document.createElement('div')
     element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:none'
-    stopGestures = forwardGestures(element)
+    const stopPointer = forwardGestures(element)
     await callPlugin('google-maps', 'show')
+    // `show` 之後才送洞的位置（`show` 會重置它）；camera 選項在這之後才套用，相機中心才會落在洞的中心
+    const stopLayout = trackLayout(element)
+    stopGestures = () => {
+      stopPointer()
+      stopLayout()
+    }
   }
   else {
     defineAqutterNative()

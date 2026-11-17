@@ -19,3 +19,10 @@
 - [x] [aqutter-plugins] `forwardGestures` 改以視窗大小正規化；補測試
 - [x] [aqutter-plugins] 在 nuxt-app 建暫時頁面（不進版控）測圓角卡片、圓形遮罩、漸層淡出邊緣、半透明疊層，實機操作並截圖
 - [x] [aqutter-plugins] 結果補進 `report.md`
+
+## Phase 5 — Iteration 2：位置同步與滾動實測
+- [x] [aqutter-plugins] `hole_layout.dart` 純函式與單元測試
+- [x] [aqutter-plugins] `layout` handler：padding、平移、手勢扣平移、延遲記錄
+- [x] [aqutter-plugins] 網頁端 `layout` 追蹤（ResizeObserver、scroll 捕獲、resize），測試
+- [x] [aqutter-plugins] nuxt-app 暫時頁面加「滾動內容」版面，實機量延遲、截滾動中的錯位
+- [x] [aqutter-plugins] 結果補進 `report.md`

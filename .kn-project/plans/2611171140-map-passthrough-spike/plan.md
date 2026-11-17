@@ -55,6 +55,10 @@
 - `packages/google-maps/lib/src/google_maps_plugin.dart:178` (`buildUnderlay`) — [Iteration 1] 不鏡像模式的底層地圖只在網頁 `mount` 後才建立、`destroy` 後移除，App 啟動與其他頁面不再看到地圖；新增 `show`／`hide` handler。
 - `packages/google-maps/src/nativeProvider.ts:12` (`createNativeView`、`forwardGestures`) — [Iteration 1] 不鏡像模式在 `mount`／`destroy` 呼叫 `show`／`hide`；手勢位置改以視窗大小正規化（目前以元素大小，元素不是滿版時換算會錯）。
 - `packages/google-maps/test/gestures.test.ts` — [Iteration 1] 補視窗正規化與 `show`／`hide` 的測試。
+- `packages/google-maps/lib/src/google_maps_plugin.dart:178` (`buildUnderlay`)、`:90` (`handlers`) — [Iteration 2] 新增 `layout` handler：底層地圖與洞同大、同位置，隨洞移動更新位置；手勢位置換算成相對底層地圖；以 `AQUTTER_MAP_LAYOUT_LOG` 記錄 `layout` 的傳遞延遲。
+- `packages/google-maps/lib/src/hole_layout.dart` (new) — [Iteration 2] 純函式：洞矩形與平移量換算、手勢換成相對底層地圖，方便單元測試。
+- `packages/google-maps/src/nativeProvider.ts:12` (`createNativeView`) — [Iteration 2] `mount` 後以 ResizeObserver、捕獲階段的 scroll 與 resize 事件，每個畫面最多送一次 `layout`。
+- `packages/google-maps/test/hole_layout_test.dart` (new)、`packages/google-maps/test/gestures.test.ts` — [Iteration 2] 補測試。
 - `.kn-project/archive/2611171140-map-passthrough-spike.md` (new) — 驗證報告（歸檔時產生）。
 
 ## App-Flow Screens
@@ -84,6 +88,9 @@
 - **[Iteration 1 · 使用者回饋]** (1) 穿透與鏡像的事件是否共用——`ready`／`cameraIdle`／`tap` 由同一份 Dart 程式發出、`GoogleMapsView` 的訂閱介面相同，手勢輸入兩邊都進同一個 `_onMessage`；差別只有輸入來源與 `googleMaps.element()`（穿透模式為 null）。(2) 不要 App 一開啟就先看到地圖——改成進入有地圖的畫面才建立底層。(3) 測試圓角與遮罩（假設指 CSS 圓角、`clip-path`、`mask-image` 漸層、半透明疊層），用 nuxt-app 暫時頁面，不進版控。
 - **[Iteration 1 · 發現]** 現行手勢以「元素大小」正規化，但底層地圖是滿版，元素不是滿版（圓角卡片、遮罩區）時平移與縮放比例會錯；改以視窗大小正規化。
 - **[Iteration 1 · 結果]** 按需建立底層（`show`／`hide`＋工作階段編號）已實機驗證；手勢改以視窗正規化；圓角、圓形、漸層遮罩、半透明疊層通過，`backdrop-filter` 對原生地圖無效。細節見 `report.md`。
+- **[Iteration 2 · 使用者核准]** 補兩件事並實測：(1) 位置同步——洞的矩形傳給 plugin，相機中心對到洞中心；(2) 滾動跟隨——洞隨頁面捲動時，底層地圖以平移跟著走（不縮放、不重建，只做 `Transform.translate`），並量 `layout` 從網頁送到 Dart 的延遲、截取滾動中的錯位。手勢控制權（單指捲頁面、雙指操作地圖）不在本次範圍。
+- **[Iteration 2 · 設計]** 底層地圖與洞同大、同位置，洞移動時只更新位置（不改大小），洞大小變了才以新矩形當基準。曾試過 `GoogleMap.padding`（無效）與螢幕大小的地圖加 `scrollBy`（洞在螢幕外時捲進來是空白），都放棄。細節見 report.md。
+- **[Iteration 2 · 結果]** 位置同步與滾動跟隨已實機驗證（見 report.md）：`layout` 傳遞延遲中位數 7～8 ms；一開始在螢幕外的卡片捲進來後地圖完整覆蓋。手勢換算的準確度、洞大小改變、快速甩動的最大落後未驗證。
 
 ## Git Completion Policy
 - PR 一律以 `--base main` 顯式指定 base（若最後要開 PR）。
