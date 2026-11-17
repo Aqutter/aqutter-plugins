@@ -53,6 +53,16 @@ describe('googleMaps', () => {
       expect(googleMaps.element(box())).toBe(element)
     })
 
+    it('leaves the mode attribute off by default, so the element default (auto) applies', async () => {
+      await googleMaps.mount(box())
+      expect(box().querySelector('aqutter-native')?.hasAttribute('mode')).toBe(false)
+    })
+
+    it.each(['auto', 'mirror', 'passthrough'] as const)('sets mode="%s" on the element', async (mode) => {
+      await googleMaps.mount(box(), { mode })
+      expect(box().querySelector('aqutter-native')?.getAttribute('mode')).toBe(mode)
+    })
+
     it('applies the initial map type and camera through the plugin', async () => {
       await googleMaps.mount(box(), { mapType: 'hybrid', camera: { lat: 35, lng: 139, zoom: 11 } })
       expect(bridge.calls).toEqual([

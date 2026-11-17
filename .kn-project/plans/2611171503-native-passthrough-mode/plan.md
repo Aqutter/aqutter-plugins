@@ -152,6 +152,10 @@ google-maps（以及使用 `<aqutter-native>` 的 plugin）沿用 core 的穿透
 - **[程式碼風格]** 實作遵守 `kn-project-code-style`。
 - **[契約]** rev 1 凍結（核准日 2026-11-17）。
 - **[契約變更]** rev 1 → rev 2（已核准）：child 一律保持掛載，穿透時第一則可見 layout 前以 `Offstage` 隱藏（契約 §4、§6）；只影響 aqutter_core 的實作，本 repo 只同步契約文字。
+- **[實作]** `GoogleMapsPlugin(mode:)` 傳給 `AqutterNative(mode:)`；只占畫面一部分（`widthFactor`／`heightFactor` ≠ 1）時一律鏡像——穿透時地圖與位置跟著網頁元素，而 `AqutterNative` 的盒子原點必須等於 WebView 視窗原點（契約 §4），`FractionallySizedBox` 包住它會讓矩形換算錯位。`GoogleMapsMountOptions.mode` 設到元素的 `mode` 屬性，省略時不設（元素預設 `auto`）。
+- **[實作]** Android 維持原本強制的 texture 模式（`useAndroidViewSurface = false`）：前置實驗與整合驗證都是在 texture 模式下通過的，Hybrid Composition 模式沒有測。
+- **[驗證]** Dart 17 個、TypeScript 27 個測試通過；整合驗證（core＋js＋殼）時用的是**未修改**的 plugin：預設 `auto` 協商成穿透、屬性切 `mirror`／`passthrough` 都正確。`mode` 選項設屬性靠單元測試，`GoogleMapsPlugin(mode: mirror)` 強制鏡像未在實機驗證（core 的決策表測試涵蓋 `unsupported-widget`）。
+- **[教訓]** 整合驗證時在 nuxt-app 的 `node_modules` 原地覆蓋檔案，pnpm 的 hardlink 讓共用內容被改到，其他專案的 `@aqutter/aqutter` 因此少了新檔案而型別檢查失敗；已還原。之後要覆蓋 `node_modules` 內的檔案須先刪除再複製（建立新 inode）。
 - **[完成後]** commit + 開 PR（Rule 12 非互動鏈；完成前自動 fetch 後 rebase origin/main 並 push --force-with-lease --force-if-includes）。
 - **[執行模式]** 序列（依據：環境只有單一 agent，沒有獨立子 agent）；順序 aqutter_core → aqutter-js → aqutter → aqutter-plugins。
 - **[範圍]** 使用者指示「先定契約」：本次先把契約凍結、建立 issue 與分支並提交計畫，實作（`tasks.md` 的 Phase 1 起）等使用者確認後再開始。

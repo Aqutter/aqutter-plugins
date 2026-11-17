@@ -10,7 +10,7 @@ import type {
 /** 與 Dart 端 `aqutterGoogleMapsSession` 一致。 */
 export const GOOGLE_MAPS_SESSION = 'google-maps'
 
-/** `'native'` provider：在 container 內建立 `<aqutter-native>`，鏡像原生地圖（iOS、Android）。 */
+/** `'native'` provider：在 container 內建立 `<aqutter-native>`，把原生地圖鏡像或穿透到網頁（iOS、Android；`mode` 選項決定）。 */
 export const createNativeView = async (
   container: HTMLElement,
   options: GoogleMapsMountOptions,
@@ -19,6 +19,9 @@ export const createNativeView = async (
   const element = document.createElement('aqutter-native')
   element.setAttribute('session', GOOGLE_MAPS_SESSION)
   element.setAttribute('fit', 'cover')
+  if (options.mode) {
+    element.setAttribute('mode', options.mode)
+  }
   element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'
   if (getComputedStyle(container).position === 'static') {
     container.style.position = 'relative'
