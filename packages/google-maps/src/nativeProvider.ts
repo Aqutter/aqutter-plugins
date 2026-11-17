@@ -35,10 +35,11 @@ export const forwardGestures = (element: HTMLElement): (() => void) => {
   const DOUBLE_TAP_MS = 300
   const TAP_SLOP = 8
 
-  const norm = (x: number, y: number): { x: number, y: number } => {
-    const rect = element.getBoundingClientRect()
-    return { x: (x - rect.left) / (rect.width || 1), y: (y - rect.top) / (rect.height || 1) }
-  }
+  // 底層地圖是滿版（與視窗同大），所以位置與位移一律以視窗大小正規化；元素本身可以比視窗小（圓角卡片、遮罩區）
+  const norm = (x: number, y: number): { x: number, y: number } => ({
+    x: x / (window.innerWidth || 1),
+    y: y / (window.innerHeight || 1),
+  })
   const two = (): [{ x: number, y: number }, { x: number, y: number }] => {
     const [a, b] = [...pointers.values()]
     return [a!, b!]
@@ -50,8 +51,7 @@ export const forwardGestures = (element: HTMLElement): (() => void) => {
   const flush = (): void => {
     frame = 0
     if (panDx !== 0 || panDy !== 0) {
-      const rect = element.getBoundingClientRect()
-      send({ type: 'pan', phase: 'update', dx: panDx / (rect.width || 1), dy: panDy / (rect.height || 1) })
+      send({ type: 'pan', phase: 'update', dx: panDx / (window.innerWidth || 1), dy: panDy / (window.innerHeight || 1) })
       panDx = 0
       panDy = 0
     }
@@ -154,6 +154,7 @@ export const createNativeView = async (
     element = document.createElement('div')
     element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;background:transparent;touch-action:none'
     stopGestures = forwardGestures(element)
+    await callPlugin('google-maps', 'show')
   }
   else {
     defineAqutterNative()
@@ -199,6 +200,9 @@ export const createNativeView = async (
       }
       unsubscribers.clear()
       stopGestures()
+      if (passthrough) {
+        void callPlugin('google-maps', 'hide').catch(() => {})
+      }
       element.remove()
     },
   }

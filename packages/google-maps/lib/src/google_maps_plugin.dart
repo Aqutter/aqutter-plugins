@@ -79,6 +79,11 @@ class GoogleMapsPlugin extends AqutterPlugin {
   final AqutterMapGestureMapper _mapper = AqutterMapGestureMapper();
   final ValueNotifier<Set<Marker>> _markers = ValueNotifier<Set<Marker>>(<Marker>{});
   final ValueNotifier<MapType> _type = ValueNotifier<MapType>(MapType.normal);
+
+  /// 不鏡像模式：目前顯示中的地圖工作階段編號；0 表示網頁沒有在顯示地圖（不建立 `GoogleMap`）。
+  /// 每次 `show` 換一個新編號，連續 `hide`、`show`（例如切換版面）時才會真的重建地圖，而不是沿用舊的相機位置。
+  final ValueNotifier<int> _session = ValueNotifier<int>(0);
+  int _nextSession = 1;
   CameraPosition _camera = const CameraPosition(target: LatLng(0, 0));
   AqutterMapSize _size = (width: 0, height: 0);
 
@@ -102,6 +107,21 @@ class GoogleMapsPlugin extends AqutterPlugin {
               'pending': _pending.hasPending,
               'camera': _cameraJson(),
             },
+        // 實驗（不鏡像模式）：網頁 `mount` 後才建立底層地圖、`destroy` 後移除，其他畫面（含 App 啟動）不會看到地圖
+        'show': (payload) async {
+          if (!_passthrough) {
+            return {'ok': false};
+          }
+          _camera = initialCamera;
+          _mapController = null;
+          _session.value = _nextSession++;
+          return {'ok': true};
+        },
+        'hide': (payload) async {
+          _session.value = 0;
+          _mapController = null;
+          return {'ok': _passthrough};
+        },
         // 實驗：回報目前是否為不鏡像模式，網頁端據此決定要不要建立 `<aqutter-native>`
         'mode': (payload) async => {'passthrough': _passthrough},
         // 實驗（不鏡像模式）：網頁把 pointer 事件換成語意手勢（pan／pinch／doubleTap／tap，欄位同 `AqutterMapGestureMapper`）送來
@@ -180,13 +200,22 @@ class GoogleMapsPlugin extends AqutterPlugin {
       return null;
     }
     if (_passthrough) {
-      // 不鏡像：地圖直接畫在這裡，由上層（透明的）WebView 蓋住；觸控走 `gesture` handler
+      // 不鏡像：地圖直接畫在這裡，由上層（透明的）WebView 蓋住；觸控走 `gesture` handler。
+      // 網頁 `mount` 之前不建立地圖，避免 App 一開啟（或在別的畫面）就先看到它。
       return Positioned.fill(
-        child: FractionallySizedBox(
-          alignment: alignment,
-          widthFactor: widthFactor,
-          heightFactor: heightFactor,
-          child: _buildMap(),
+        child: ValueListenableBuilder<int>(
+          valueListenable: _session,
+          builder: (context, session, _) => session > 0
+              ? KeyedSubtree(
+                  key: ValueKey<int>(session),
+                  child: FractionallySizedBox(
+                    alignment: alignment,
+                    widthFactor: widthFactor,
+                    heightFactor: heightFactor,
+                    child: _buildMap(),
+                  ),
+                )
+              : const SizedBox.shrink(),
         ),
       );
     }
@@ -244,7 +273,13 @@ class GoogleMapsPlugin extends AqutterPlugin {
     );
   }
 
-  Future<GoogleMapController?> _readyController() async => _mapController;
+  /// 取得地圖控制器。不鏡像模式剛 `show` 時地圖還在建立，最多等 5 秒。
+  Future<GoogleMapController?> _readyController() async {
+    for (var i = 0; i < 50 && _mapController == null && _passthrough && _session.value > 0; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 100));
+    }
+    return _mapController;
+  }
 
   Future<void> _onMessage(AqutterNativeMessage message) async {
     final controller = await _readyController();
@@ -312,5 +347,6 @@ class GoogleMapsPlugin extends AqutterPlugin {
     _mapController = null;
     _markers.dispose();
     _type.dispose();
+    _session.dispose();
   }
 }

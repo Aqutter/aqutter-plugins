@@ -13,3 +13,9 @@
 
 ## Phase 3 — 報告
 - [x] [aqutter-plugins] 寫驗證報告（結果、限制、未驗證項目、建議是否做成正式功能）
+
+## Phase 4 — Iteration 1：按需建立底層、手勢正規化、圓角與遮罩實測
+- [x] [aqutter-plugins] `buildUnderlay` 只在 `mount` 後顯示；新增 `show`／`hide`；網頁端 `mount`／`destroy` 呼叫
+- [x] [aqutter-plugins] `forwardGestures` 改以視窗大小正規化；補測試
+- [x] [aqutter-plugins] 在 nuxt-app 建暫時頁面（不進版控）測圓角卡片、圓形遮罩、漸層淡出邊緣、半透明疊層，實機操作並截圖
+- [x] [aqutter-plugins] 結果補進 `report.md`

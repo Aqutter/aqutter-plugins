@@ -36,7 +36,10 @@ describe('forwardGestures', () => {
     bridge.calls = []
     document.body.innerHTML = '<div id="map"></div>'
     element = document.getElementById('map') as HTMLElement
-    element.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 100, right: 200, bottom: 100, x: 0, y: 0, toJSON: () => ({}) })
+    // 視窗 200x100；元素比視窗小時位置與位移仍以視窗大小正規化
+    Object.defineProperty(window, 'innerWidth', { value: 200, configurable: true })
+    Object.defineProperty(window, 'innerHeight', { value: 100, configurable: true })
+    element.getBoundingClientRect = () => ({ left: 20, top: 10, width: 100, height: 50, right: 120, bottom: 60, x: 20, y: 10, toJSON: () => ({}) })
     element.setPointerCapture = () => {}
   })
 
@@ -85,19 +88,24 @@ describe('forwardGestures', () => {
 describe('googleMaps.mount in passthrough mode', () => {
   it('uses a transparent div instead of aqutter-native', async () => {
     bridge.passthrough = true
+    bridge.calls = []
     document.body.innerHTML = '<div id="box"></div>'
     const view = await googleMaps.mount(document.getElementById('box') as HTMLElement)
     expect(document.querySelector('aqutter-native')).toBeNull()
     expect(document.querySelector('#box > div')).not.toBeNull()
+    expect(bridge.calls.map(call => call.method)).toContain('show')
     view.destroy()
     expect(document.querySelector('#box > div')).toBeNull()
+    expect(bridge.calls.map(call => call.method)).toContain('hide')
   })
 
   it('keeps aqutter-native when the plugin is not in passthrough mode', async () => {
     bridge.passthrough = false
+    bridge.calls = []
     document.body.innerHTML = '<div id="box"></div>'
     const view = await googleMaps.mount(document.getElementById('box') as HTMLElement)
     expect(document.querySelector('aqutter-native')).not.toBeNull()
+    expect(bridge.calls.map(call => call.method)).not.toContain('show')
     view.destroy()
   })
 })

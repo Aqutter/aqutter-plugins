@@ -52,6 +52,9 @@
 - `packages/google-maps/lib/src/google_maps_plugin.dart:90` (`handlers`) — 新增 `mode`、`gesture`。
 - `packages/google-maps/lib/src/google_maps_plugin.dart:148` (`attach`) — 不鏡像時不強制 texture 模式（`:156`）。
 - `packages/google-maps/src/nativeProvider.ts:12` (`createNativeView`) — 不鏡像模式：透明容器＋pointer 手勢轉送。
+- `packages/google-maps/lib/src/google_maps_plugin.dart:178` (`buildUnderlay`) — [Iteration 1] 不鏡像模式的底層地圖只在網頁 `mount` 後才建立、`destroy` 後移除，App 啟動與其他頁面不再看到地圖；新增 `show`／`hide` handler。
+- `packages/google-maps/src/nativeProvider.ts:12` (`createNativeView`、`forwardGestures`) — [Iteration 1] 不鏡像模式在 `mount`／`destroy` 呼叫 `show`／`hide`；手勢位置改以視窗大小正規化（目前以元素大小，元素不是滿版時換算會錯）。
+- `packages/google-maps/test/gestures.test.ts` — [Iteration 1] 補視窗正規化與 `show`／`hide` 的測試。
 - `.kn-project/archive/2611171140-map-passthrough-spike.md` (new) — 驗證報告（歸檔時產生）。
 
 ## App-Flow Screens
@@ -78,6 +81,9 @@
 - **[結果]** 方案 2 在 ASUS（Android 13）通過：顯示、HTML 疊層、拖曳、縮放、點擊正常；掉幀 0% 對鏡像 28.9%。報告見 aqutter-plugins 的 `.kn-project/plans/2611171140-map-passthrough-spike/report.md`。
 - **[發現]** 殼的初始 `transparentBackground` 在 Android 沒生效，實驗改成建立後先 false 再 true 才透明；根因未查，列入報告的待處理。
 - **[歸檔]** 驗證報告暫放計畫資料夾（`report.md`），實驗分支不歸檔、不開 PR；去留由使用者決定。
+- **[Iteration 1 · 使用者回饋]** (1) 穿透與鏡像的事件是否共用——`ready`／`cameraIdle`／`tap` 由同一份 Dart 程式發出、`GoogleMapsView` 的訂閱介面相同，手勢輸入兩邊都進同一個 `_onMessage`；差別只有輸入來源與 `googleMaps.element()`（穿透模式為 null）。(2) 不要 App 一開啟就先看到地圖——改成進入有地圖的畫面才建立底層。(3) 測試圓角與遮罩（假設指 CSS 圓角、`clip-path`、`mask-image` 漸層、半透明疊層），用 nuxt-app 暫時頁面，不進版控。
+- **[Iteration 1 · 發現]** 現行手勢以「元素大小」正規化，但底層地圖是滿版，元素不是滿版（圓角卡片、遮罩區）時平移與縮放比例會錯；改以視窗大小正規化。
+- **[Iteration 1 · 結果]** 按需建立底層（`show`／`hide`＋工作階段編號）已實機驗證；手勢改以視窗正規化；圓角、圓形、漸層遮罩、半透明疊層通過，`backdrop-filter` 對原生地圖無效。細節見 `report.md`。
 
 ## Git Completion Policy
 - PR 一律以 `--base main` 顯式指定 base（若最後要開 PR）。
