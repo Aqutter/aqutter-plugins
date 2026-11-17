@@ -30,6 +30,10 @@ export type GoogleMapsContract = PluginDefinition<
     moveTo: { req: { lat: number, lng: number, zoom?: number, animate?: boolean }, res: { ok: boolean } }
     setMarkers: { req: { markers: GoogleMapsMarker[] }, res: { count: number } }
     setMapType: { req: { type: GoogleMapsType }, res: { type: string } }
+    /** 實驗（不鏡像模式）：目前是否為不鏡像模式。 */
+    mode: { req: void, res: { passthrough: boolean } }
+    /** 實驗（不鏡像模式）：網頁送來的語意手勢，欄位同 Dart 端 `AqutterMapGestureMapper`。 */
+    gesture: { req: { type: string } & Record<string, unknown>, res: { ok: boolean } }
   },
   {
     ready: { camera: GoogleMapsCamera }

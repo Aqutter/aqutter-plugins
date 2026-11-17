@@ -12,6 +12,9 @@ vi.mock('@aqutter/aqutter', () => ({
   defineAqutterNative: () => {},
   isPluginSupported: () => bridge.supported,
   callPlugin: async (_id: string, method: string, payload?: unknown) => {
+    if (method === 'mode') {
+      return { passthrough: false }
+    }
     bridge.calls.push({ method, payload })
     return method === 'getCamera' ? { lat: 1, lng: 2, zoom: 3 } : { ok: true }
   },

@@ -14,6 +14,11 @@ const bool _baseline = bool.fromEnvironment('AQUTTER_MAP_BASELINE');
 
 /// 以 `--dart-define=AQUTTER_MAP_DUTY=0.7` 指定原生擷取佔用主執行緒的上限（0 到 1），效能量測用；沒給時用 `AqutterNative` 的預設（0.7）。
 /// 以 `--dart-define=AQUTTER_MAP_MINSCALE=0.25` 覆蓋解析度下限（量測用）。
+/// 實驗（2611171140-map-passthrough-spike）：以 `--dart-define=AQUTTER_MAP_PASSTHROUGH=true` 讓地圖不鏡像，
+/// 直接畫在 Flutter 裡、墊在（需同時開 `AQUTTER_WEBVIEW_TRANSPARENT=true` 變透明的）WebView 之下；
+/// 觸控由網頁換成語意手勢，經 `gesture` handler 送來。預設關閉，行為不變。
+const bool _passthrough = bool.fromEnvironment('AQUTTER_MAP_PASSTHROUGH');
+
 final double? _minScaleOverride = double.tryParse(const String.fromEnvironment('AQUTTER_MAP_MINSCALE'));
 
 final double? _dutyOverride = double.tryParse(const String.fromEnvironment('AQUTTER_MAP_DUTY'));
@@ -97,6 +102,17 @@ class GoogleMapsPlugin extends AqutterPlugin {
               'pending': _pending.hasPending,
               'camera': _cameraJson(),
             },
+        // 實驗：回報目前是否為不鏡像模式，網頁端據此決定要不要建立 `<aqutter-native>`
+        'mode': (payload) async => {'passthrough': _passthrough},
+        // 實驗（不鏡像模式）：網頁把 pointer 事件換成語意手勢（pan／pinch／doubleTap／tap，欄位同 `AqutterMapGestureMapper`）送來
+        'gesture': (payload) async {
+          final type = payload['type'];
+          if (!_passthrough || type is! String) {
+            return {'ok': false};
+          }
+          await _onMessage(AqutterNativeMessage(type, payload));
+          return {'ok': true};
+        },
         'moveTo': (payload) async {
           final controller = await _readyController();
           if (controller == null) {
@@ -150,7 +166,7 @@ class GoogleMapsPlugin extends AqutterPlugin {
     _type.value = mapType;
     _camera = initialCamera;
     final platform = GoogleMapsFlutterPlatform.instance;
-    if (platform is GoogleMapsFlutterAndroid) {
+    if (platform is GoogleMapsFlutterAndroid && !_passthrough) {
       // texture 模式：地圖以 Texture 進 Flutter 的合成，RepaintBoundary 才擷取得到；
       // Hybrid Composition（AndroidViewSurface）的內容不在 Flutter 的圖層裡，擷取不到。
       platform.useAndroidViewSurface = false;
@@ -162,53 +178,68 @@ class GoogleMapsPlugin extends AqutterPlugin {
     if (kIsWeb || !nativePlatforms.contains(defaultTargetPlatform)) {
       return null;
     }
+    if (_passthrough) {
+      // 不鏡像：地圖直接畫在這裡，由上層（透明的）WebView 蓋住；觸控走 `gesture` handler
+      return Positioned.fill(
+        child: FractionallySizedBox(
+          alignment: alignment,
+          widthFactor: widthFactor,
+          heightFactor: heightFactor,
+          child: _buildMap(),
+        ),
+      );
+    }
     return Positioned.fill(
       child: FractionallySizedBox(
         alignment: alignment,
         widthFactor: widthFactor,
         heightFactor: heightFactor,
         child: AqutterNative(
-        sessionId: pluginId,
-        quality: quality,
-        maxFps: maxFps,
-        minScale: _minScaleOverride ?? minScale,
-        nativeMaxDuty: _baseline ? 1.0 : _dutyOverride,
-        matchViewportAspect: true,
-        // RepaintBoundary.toImage 擷取不到地圖（texture／PlatformView 的內容，鏡像會是透明的），改用原生擷取：
-        // Android 用 PixelCopy 複製 Flutter 的繪圖表面，iOS 用 drawHierarchy 直接擷取地圖 view
-        nativeCapture: true,
-        nativeViewTypeContains: 'GMSMapView',
-        onMessage: _onMessage,
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            _size = (width: constraints.maxWidth, height: constraints.maxHeight);
-            return ValueListenableBuilder<Set<Marker>>(
-              valueListenable: _markers,
-              builder: (context, markers, _) => ValueListenableBuilder<MapType>(
-                valueListenable: _type,
-                builder: (context, type, _) => GoogleMap(
-                  initialCameraPosition: initialCamera,
-                  mapType: type,
-                  markers: markers,
-                  // 地圖被網頁蓋住，系統的控制項沒有意義；操作由網頁決定
-                  zoomControlsEnabled: false,
-                  myLocationButtonEnabled: false,
-                  compassEnabled: false,
-                  mapToolbarEnabled: false,
-                  onMapCreated: (controller) {
-                    _mapController = controller;
-                    _context?.emit('ready', {'camera': _cameraJson()});
-                  },
-                  // 注意：iOS 上程式化移動相機（moveCamera）不會觸發這個回呼，所以不能拿它當縮放的基準
-                  onCameraMove: (position) => _camera = position,
-                  onCameraIdle: () => _context?.emit('cameraIdle', _cameraJson()),
-                ),
-              ),
-            );
-          },
-        ),
+          sessionId: pluginId,
+          quality: quality,
+          maxFps: maxFps,
+          minScale: _minScaleOverride ?? minScale,
+          nativeMaxDuty: _baseline ? 1.0 : _dutyOverride,
+          matchViewportAspect: true,
+          // RepaintBoundary.toImage 擷取不到地圖（texture／PlatformView 的內容，鏡像會是透明的），改用原生擷取：
+          // Android 用 PixelCopy 複製 Flutter 的繪圖表面，iOS 用 drawHierarchy 直接擷取地圖 view
+          nativeCapture: true,
+          nativeViewTypeContains: 'GMSMapView',
+          onMessage: _onMessage,
+          child: _buildMap(),
         ),
       ),
+    );
+  }
+
+  Widget _buildMap() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _size = (width: constraints.maxWidth, height: constraints.maxHeight);
+        return ValueListenableBuilder<Set<Marker>>(
+          valueListenable: _markers,
+          builder: (context, markers, _) => ValueListenableBuilder<MapType>(
+            valueListenable: _type,
+            builder: (context, type, _) => GoogleMap(
+              initialCameraPosition: initialCamera,
+              mapType: type,
+              markers: markers,
+              // 地圖被網頁蓋住，系統的控制項沒有意義；操作由網頁決定
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+              compassEnabled: false,
+              mapToolbarEnabled: false,
+              onMapCreated: (controller) {
+                _mapController = controller;
+                _context?.emit('ready', {'camera': _cameraJson()});
+              },
+              // 注意：iOS 上程式化移動相機（moveCamera）不會觸發這個回呼，所以不能拿它當縮放的基準
+              onCameraMove: (position) => _camera = position,
+              onCameraIdle: () => _context?.emit('cameraIdle', _cameraJson()),
+            ),
+          ),
+        );
+      },
     );
   }
 
