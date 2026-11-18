@@ -22,7 +22,8 @@ export const createNativeView = async (
   if (options.mode) {
     element.setAttribute('mode', options.mode)
   }
-  element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%'
+  // 圓角繼承容器：穿透時背景洞的圓角取自元素的 border-radius（aqutter-js），鏡像時元素自己裁掉 canvas 的四角
+  element.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border-radius:inherit;overflow:hidden'
   if (getComputedStyle(container).position === 'static') {
     container.style.position = 'relative'
   }

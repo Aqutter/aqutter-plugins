@@ -53,6 +53,13 @@ describe('googleMaps', () => {
       expect(googleMaps.element(box())).toBe(element)
     })
 
+    it('inherits the container corner radius and clips its own content (the passthrough hole takes its radius from the element)', async () => {
+      await googleMaps.mount(box())
+      const element = box().querySelector('aqutter-native') as HTMLElement
+      expect(element.style.borderRadius).toBe('inherit')
+      expect(element.style.overflow).toBe('hidden')
+    })
+
     it('leaves the mode attribute off by default, so the element default (auto) applies', async () => {
       await googleMaps.mount(box())
       expect(box().querySelector('aqutter-native')?.hasAttribute('mode')).toBe(false)
