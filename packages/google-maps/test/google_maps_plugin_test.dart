@@ -2,6 +2,7 @@ import 'package:aqutter/aqutter.dart';
 import 'package:aqutter_plugin_google_maps/aqutter_plugin_google_maps.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 
 AqutterNativeMessage _message(String type, [Map<String, dynamic> data = const {}]) => AqutterNativeMessage(type, data);
 
@@ -21,6 +22,15 @@ void main() {
         expect(GoogleMapsPlugin.underlayMode(mode, widthFactor: 0.5, heightFactor: 1.0), AqutterNativeMode.mirror);
         expect(GoogleMapsPlugin.underlayMode(mode, widthFactor: 1.0, heightFactor: 0.5), AqutterNativeMode.mirror);
       }
+    });
+  });
+
+  group('native touch', () {
+    test('claims the gesture arena only when touches go straight to the native map', () {
+      expect(GoogleMapsPlugin.nativeGestureRecognizers(nativeTouch: false), isEmpty);
+      final recognizers = GoogleMapsPlugin.nativeGestureRecognizers(nativeTouch: true);
+      expect(recognizers, hasLength(1));
+      expect(recognizers.single.constructor(), isA<EagerGestureRecognizer>());
     });
   });
 

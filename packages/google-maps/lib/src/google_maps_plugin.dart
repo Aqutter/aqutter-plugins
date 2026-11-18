@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:aqutter/aqutter.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:google_maps_flutter_android/google_maps_flutter_android.dart';
@@ -161,6 +162,18 @@ class GoogleMapsPlugin extends AqutterPlugin {
         },
       };
 
+  /// 觸控直接進原生時（iOS 穿透，`AqutterNativeTouch` 為真）的手勢宣告。
+  ///
+  /// 上層的 WebView 預設會贏走 Flutter 的手勢競技場、封鎖底下的地圖 view；地圖要自己宣告要手勢才拿得到觸控。
+  /// 其餘情況不宣告，維持原本的行為（觸控由網頁轉送）。
+  @visibleForTesting
+  static Set<Factory<OneSequenceGestureRecognizer>> nativeGestureRecognizers({required bool nativeTouch}) =>
+      nativeTouch
+          ? <Factory<OneSequenceGestureRecognizer>>{
+              Factory<OneSequenceGestureRecognizer>(EagerGestureRecognizer.new),
+            }
+          : const <Factory<OneSequenceGestureRecognizer>>{};
+
   @override
   void attach(AqutterPluginContext context) {
     _context = context;
@@ -200,11 +213,14 @@ class GoogleMapsPlugin extends AqutterPlugin {
         child: LayoutBuilder(
           builder: (context, constraints) {
             _size = (width: constraints.maxWidth, height: constraints.maxHeight);
-            return ValueListenableBuilder<Set<Marker>>(
+            return ValueListenableBuilder<bool>(
+              valueListenable: AqutterNativeTouch.of(context),
+              builder: (context, nativeTouch, _) => ValueListenableBuilder<Set<Marker>>(
               valueListenable: _markers,
               builder: (context, markers, _) => ValueListenableBuilder<MapType>(
                 valueListenable: _type,
                 builder: (context, type, _) => GoogleMap(
+                  gestureRecognizers: nativeGestureRecognizers(nativeTouch: nativeTouch),
                   initialCameraPosition: initialCamera,
                   mapType: type,
                   markers: markers,
@@ -221,6 +237,7 @@ class GoogleMapsPlugin extends AqutterPlugin {
                   onCameraMove: (position) => _camera = position,
                   onCameraIdle: () => _context?.emit('cameraIdle', _cameraJson()),
                 ),
+              ),
               ),
             );
           },
