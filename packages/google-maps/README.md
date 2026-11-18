@@ -185,8 +185,10 @@ await googleMaps.mount(container, { mode: 'auto' }) // 省略時就是 auto（�
 
 App 端也可以限制：`GoogleMapsPlugin(mode: AqutterNativeMode.mirror)` 表示這個地圖絕不穿透。
 
-- **穿透的地圖大小與位置跟著網頁元素**（也就是你放 `container` 的地方），隨頁面捲動；圓角與遮罩用網頁在地圖四周畫不透明的邊來挖洞（例如 `box-shadow: 0 0 0 200vmax <底色>` 加 `border-radius`，或全屏不透明層加 `mask-image`）。`backdrop-filter` 模糊對地圖沒有效果。
-- **頁面條件**：元素後方的祖先不可以有不透明背景（`background-color` 的 alpha ≥ 0.99 或有 `background-image`），否則會蓋住地圖。`auto` 會偵測並在不通過時退回鏡像；偵測不涵蓋兄弟元素、偽元素、`box-shadow` 遮罩，這類頁面請明確寫 `mode: 'mirror'`。明確寫 `'passthrough'` 不偵測。
+- **穿透的地圖大小與位置跟著網頁元素**（也就是你放 `container` 的地方），隨頁面捲動。`backdrop-filter` 模糊對地圖沒有效果。
+- **圓角**：替 `container` 加圓角即可（`mount` 建立的元素會繼承它），穿透與鏡像都是圓角。穿透時地圖在 WebView 下面，圓角是框架在背景上挖出的洞。
+- **頁面背景自動讓開**：穿透時框架把元素往上到 `<html>` 的不透明背景暫時改成透明，離開穿透就還原；鋪滿畫面的底層背景層（例如 `fixed inset-0` 的底色或漸層）在元素上標 `data-aqutter-bg`，框架會在地圖位置自動挖洞、跟著捲動。`<aqutter-native>` 加 `keep-background` 屬性可關閉，由頁面自己處理。
+- 沒標記的兄弟元素、偽元素、`box-shadow` 遮罩不會被自動處理，這類頁面請標記底層背景層，或明確寫 `mode: 'mirror'`。
 - 地圖只占畫面一部分（`GoogleMapsPlugin(widthFactor:, heightFactor:)` 不是 1）時一律鏡像。
 - 穿透時手指從地圖上開始滑動是操作地圖、不會捲動頁面（元素的 `touch-action: none`）。
 - 穿透需要殼與 `aqutter_core` 支援（殼會在穿透時自動讓 WebView 透明）；舊版沒有這個支援時，標籤等不到回覆就退回鏡像。
